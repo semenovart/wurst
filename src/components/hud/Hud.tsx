@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CountdownBadge } from "./CountdownBadge";
 import { DialogueBubble } from "./DialogueBubble";
 import { PhaseHint } from "./PhaseHint";
@@ -8,9 +8,26 @@ import { SpotConfirm } from "./SpotConfirm";
 import { ProgressRing } from "./ProgressRing";
 import { CeremonyCaptions } from "./CeremonyCaptions";
 import { CertificateModal } from "./CertificateModal";
+import { CounterBadge } from "./CounterBadge";
+import { WallPanel } from "./WallPanel";
 import { STR } from "@/lib/strings.ru";
 import { useRitualStore } from "@/store/ritualStore";
+import { registerBurial } from "@/lib/burialApi";
 import { Button } from "./ui";
+
+/** Карточка вернувшегося гостя: сосиска уже несёт службу */
+function ReturnedCard() {
+  const burial = useRitualStore((s) => s.burial);
+  if (!burial) return null;
+  return (
+    <div className="pointer-events-none max-w-md animate-fade-up rounded-3xl bg-cream/95 px-5 py-3 text-center shadow-xl backdrop-blur">
+      <div className="text-base font-bold">{STR.returned.title}</div>
+      <div className="mt-0.5 text-sm opacity-75">
+        {STR.returned.body(burial.n)}
+      </div>
+    </div>
+  );
+}
 
 /** Кнопка «Мой сертификат» + модалка; в certificate открыта сразу */
 function CertificatePanel({ initialOpen }: { initialOpen: boolean }) {
@@ -31,15 +48,21 @@ function CertificatePanel({ initialOpen }: { initialOpen: boolean }) {
  */
 export function Hud() {
   const phase = useRitualStore((s) => s.phase);
+  const wallOpen = useRitualStore((s) => s.wallOpen);
+
+  // Сосиска регистрируется на сервере в начале церемонии (не блокирует ритуал)
+  useEffect(() => {
+    if (phase === "ceremony") void registerBurial();
+  }, [phase]);
 
   return (
     <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between px-safe pb-safe pt-safe">
       {/* верхняя панель */}
-      <div className="flex items-start justify-between p-3">
+      <div className="flex items-start justify-between gap-2 p-3">
         <CountdownBadge className="scale-90 origin-top-left" />
         <ProgressRing />
-        {/* справа появится MuteButton (S7) и счётчик (S6) */}
-        <div />
+        {/* справа: счётчик-кнопка стены (S7 добавит MuteButton) */}
+        <CounterBadge />
       </div>
 
       {/* нижняя зона: диалог / подсказки / подтверждения */}
@@ -47,6 +70,7 @@ export function Hud() {
         {phase === "hello" && <DialogueBubble />}
         <SpotConfirm />
         {phase === "ceremony" && <CeremonyCaptions />}
+        {phase === "returned" && <ReturnedCard />}
         {(phase === "certificate" || phase === "returned") && (
           <CertificatePanel
             key={phase}
@@ -55,6 +79,8 @@ export function Hud() {
         )}
         <PhaseHint />
       </div>
+
+      {wallOpen && <WallPanel />}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRitualStore } from "@/store/ritualStore";
 import { STR } from "@/lib/strings.ru";
+import { wedding } from "@/config/wedding.config";
 import { useCoarsePointer } from "@/lib/device";
 import {
   drawCertificate,
@@ -10,6 +11,7 @@ import {
   exportCertificate,
 } from "@/lib/certificate/drawCertificate";
 import { Button } from "./ui";
+import { WishForm } from "./WishForm";
 
 /**
  * Финальный экран: превью сертификата (Canvas 2D) + скачивание.
@@ -42,6 +44,28 @@ export function CertificateModal({ onClose }: { onClose: () => void }) {
   const download = async () => {
     if (!canvasRef.current) return;
     await exportCertificate(canvasRef.current, "sosiska-certificate.png");
+  };
+
+  const [shareCopied, setShareCopied] = useState(false);
+  const shareLink = async () => {
+    if (!burial || burial.approx) return;
+    const url = `${window.location.origin}/s/${burial.id}`;
+    const title = STR.meta.shareTitle(burial.n, wedding.coupleGenitive);
+    try {
+      if (navigator.share) {
+        await navigator.share({ url, title });
+        return;
+      }
+    } catch {
+      /* отменил — предложим копирование */
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    } catch {
+      /* ignore */
+    }
   };
 
   return (
@@ -81,8 +105,19 @@ export function CertificateModal({ onClose }: { onClose: () => void }) {
 
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           <Button onClick={download}>{STR.certificate.download}</Button>
-          {/* S6: Поделиться ссылкой + Оставить пожелание */}
+          {burial && !burial.approx && (
+            <Button variant="ghost" onClick={shareLink}>
+              {STR.certificate.share}
+            </Button>
+          )}
         </div>
+        {shareCopied && (
+          <p className="mt-2 text-center text-xs font-medium text-grass-dark">
+            {STR.certificate.shareCopied}
+          </p>
+        )}
+
+        <WishForm />
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ import { DirtMound } from "./DirtMound";
 import { Shovel } from "./Shovel";
 import { Ceremony } from "./Ceremony";
 import { SunAndRainbow } from "./SunAndRainbow";
+import { MoundFlag } from "./MoundFlag";
 import { CameraRig } from "./CameraRig";
 import { useRitualStore } from "@/store/ritualStore";
 
@@ -61,6 +62,7 @@ function SceneContent() {
       <Shovel />
       <Ceremony />
       <SunAndRainbow />
+      <MoundFlag />
       <CameraRig phase={phase} spot={spotVec} />
     </>
   );
