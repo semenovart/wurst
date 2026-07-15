@@ -16,6 +16,12 @@ const RAINBOW = [
   "#b197fc",
 ];
 
+// Бледный на восходе → сочный в зените: иначе диск сливается
+// с золотым небом финала (skyGolden очень близок к PALETTE.sun)
+const SUN_PALE = new THREE.Color(PALETTE.sun);
+const SUN_VIVID = new THREE.Color("#ffb703");
+const RAY_VIVID = new THREE.Color("#ff8f0f");
+
 /**
  * Солнце с лучами и радуга из семи полудуг. Спрятаны до церемонии;
  * солнце выкатывается из-за горизонта, дуги проявляются каскадом.
@@ -40,8 +46,28 @@ export function SunAndRainbow() {
       ),
     [],
   );
+  // fog: false — солнце далеко (z=-9), туман не должен его бледнить
   const sunMat = useMemo(
-    () => new THREE.MeshBasicMaterial({ color: PALETTE.sun }),
+    () => new THREE.MeshBasicMaterial({ color: SUN_PALE, fog: false }),
+    [],
+  );
+  const rayMat = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: SUN_PALE, fog: false }),
+    [],
+  );
+  const glowMats = useMemo(
+    () =>
+      [0, 1].map(
+        () =>
+          new THREE.MeshBasicMaterial({
+            color: "#fff3cf",
+            transparent: true,
+            opacity: 0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            fog: false,
+          }),
+      ),
     [],
   );
 
@@ -62,6 +88,13 @@ export function SunAndRainbow() {
       const pulse = 1 + Math.sin(clock.elapsedTime * 2) * 0.05 * m;
       sun.scale.setScalar(pulse);
     }
+    // Солнце «накаляется» по мере восхода и в зените горит сочным золотом
+    sunMat.color.lerpColors(SUN_PALE, SUN_VIVID, ease);
+    rayMat.color.lerpColors(SUN_PALE, RAY_VIVID, ease);
+    const glowInner = glowMats[0];
+    const glowOuter = glowMats[1];
+    if (glowInner) glowInner.opacity = 0.5 * ease;
+    if (glowOuter) glowOuter.opacity = 0.28 * ease;
     if (raysRef.current) {
       raysRef.current.rotation.z = clock.elapsedTime * 0.15;
     }
@@ -80,6 +113,13 @@ export function SunAndRainbow() {
       {/* солнце за лужайкой */}
       <group position={[2.5, 0, -9]}>
         <group ref={sunRef} position={[0, 5.6, 0]}>
+          {/* сияние: два аддитивных ореола позади диска */}
+          <mesh material={glowMats[1]} position={[0, 0, -0.16]}>
+            <circleGeometry args={[2.7, 40]} />
+          </mesh>
+          <mesh material={glowMats[0]} position={[0, 0, -0.12]}>
+            <circleGeometry args={[1.75, 40]} />
+          </mesh>
           <mesh material={sunMat}>
             <sphereGeometry args={[1.15, 24, 18]} />
           </mesh>
@@ -89,7 +129,7 @@ export function SunAndRainbow() {
               return (
                 <mesh
                   key={i}
-                  material={sunMat}
+                  material={rayMat}
                   position={[Math.cos(a) * 1.75, Math.sin(a) * 1.75, 0]}
                   rotation={[0, 0, a - Math.PI / 2]}
                 >
