@@ -19,10 +19,13 @@ export function Splash({ loadingLabel }: { loadingLabel?: string }) {
       </div>
 
       <div className="animate-fade-up [animation-delay:120ms]">
-        <h1 className="text-3xl font-bold text-cream drop-shadow sm:text-4xl">
-          {STR.splash.weddingOf(wedding.coupleGenitive)}
+        <h1 className="text-3xl font-black tracking-tight text-cream drop-shadow sm:text-5xl">
+          {STR.meta.gameTitle}
         </h1>
-        <p className="mt-1 text-sm text-cream/80">{STR.splash.subtitle}</p>
+        <p className="mt-2 text-lg font-bold text-cream/95 drop-shadow">
+          {STR.splash.weddingOf(wedding.coupleGenitive)}
+        </p>
+        <p className="mt-0.5 text-sm text-cream/80">{STR.splash.subtitle}</p>
       </div>
 
       <CountdownBadge className="animate-fade-up [animation-delay:240ms]" />

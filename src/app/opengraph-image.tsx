@@ -4,7 +4,7 @@ import { OgCertificate } from "@/lib/certificate/OgCertificate";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Закопай сосиску — обеспечь погоду";
+export const alt = "The Wurst Case Scenario — закопай сосиску за погоду";
 
 /** Общая OG-карточка сайта: generic-сертификат без имени */
 export default async function Image() {

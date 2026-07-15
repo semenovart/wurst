@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   ),
   title: STR.meta.title(wedding.coupleLabel),
   description: STR.meta.description(wedding.coupleGenitive, wedding.city),
+  applicationName: STR.meta.gameTitle,
+  openGraph: { siteName: STR.meta.gameTitle },
   icons: { icon: "/icon.svg" },
 };
 

@@ -18,7 +18,10 @@ export function ruPlural(n: number, forms: [string, string, string]): string {
 
 export const STR = {
   meta: {
-    title: (couple: string) => `Закопай сосиску — обеспечь погоду · ${couple}`,
+    /** Название игры — бренд, не переводится */
+    gameTitle: "The Wurst Case Scenario",
+    title: (couple: string) =>
+      `The Wurst Case Scenario — закопай сосиску за погоду · ${couple}`,
     description: (couple: string, city: string) =>
       `Официальный пункт приёма метеорологических сосисок. Закопайте одну — и на свадьбе ${couple} в городе ${city} будет ясно. Гарантия службы.`,
     shareTitle: (n: number, couple: string) =>

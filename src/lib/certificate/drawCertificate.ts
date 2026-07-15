@@ -211,6 +211,13 @@ export function drawCertificate(canvas: HTMLCanvasElement, data: CertData) {
   ctx.font = "400 17px Rubik";
   ctx.fillText(t.place, CERT_W - 96, 582);
 
+  // бренд игры — мелко по центру снизу
+  ctx.textAlign = "center";
+  ctx.font = "400 15px Rubik";
+  ctx.globalAlpha = 0.55;
+  ctx.fillText(t.brand, CERT_W / 2, 582);
+  ctx.globalAlpha = 1;
+
   // печать
   const sx = CERT_W - 190;
   const sy = 470;

@@ -48,6 +48,9 @@ export default async function SharePage({
       <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-cream/80">
         {STR.splash.agency}
       </p>
+      <p className="-mt-3 text-xl font-black tracking-tight text-cream drop-shadow">
+        {STR.meta.gameTitle}
+      </p>
       {burial && (
         <h1 className="max-w-xl text-2xl font-bold text-cream drop-shadow sm:text-3xl">
           {STR.meta.shareTitle(burial.n, wedding.coupleGenitive)}

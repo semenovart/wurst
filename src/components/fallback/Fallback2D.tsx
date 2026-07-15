@@ -64,6 +64,9 @@ export function Fallback2D() {
       <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-cream/90">
         {STR.splash.agency}
       </p>
+      <p className="-mt-3 text-2xl font-black tracking-tight text-cream drop-shadow">
+        {STR.meta.gameTitle}
+      </p>
 
       <div className={thinking ? "animate-float-bob" : ""}>
         <SausageFace className="w-40 drop-shadow-xl" />

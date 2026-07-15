@@ -55,5 +55,6 @@ export function certTexts(data: CertData) {
     signature: STR.certificate.signature,
     signatureName: STR.certificate.signatureName,
     place: `${wedding.city}`,
+    brand: `· ${STR.meta.gameTitle.toLowerCase()} ·`,
   };
 }

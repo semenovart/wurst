@@ -274,6 +274,23 @@ export function OgCertificate({ data }: { data: CertData }) {
           {t.sausageNo}
         </div>
       </div>
+
+      {/* бренд игры — мелко по центру снизу */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 52,
+          left: 0,
+          right: 0,
+          display: "flex",
+          justifyContent: "center",
+          fontSize: 15,
+          color: C.ink,
+          opacity: 0.55,
+        }}
+      >
+        {t.brand}
+      </div>
     </div>
   );
 }
