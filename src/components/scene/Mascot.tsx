@@ -2,9 +2,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { MAT } from "./materials";
-
-/** Где маскот стоит и здоровается в начале ритуала */
-export const MASCOT_HOME: [number, number, number] = [0, 0, 1.3];
+import { MASCOT_HOME } from "./constants";
 
 /**
  * Сосиска-маскот: процедурная капсула с лицом.

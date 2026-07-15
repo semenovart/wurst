@@ -1,6 +1,10 @@
 import { useMemo, useEffect } from "react";
+import type { ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { MAT, PALETTE } from "./materials";
+import { useRitualStore } from "@/store/ritualStore";
+import { hoverSpot } from "./interactionBus";
+import { isValidSpot } from "./constants";
 
 export const TERRAIN_SIZE = 14;
 export const TERRAIN_SEGS = 96;
@@ -56,9 +60,32 @@ export function Terrain() {
   const geometry = useMemo(buildTerrainGeometry, []);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
+  const phase = useRitualStore((s) => s.phase);
+  const choosing = phase === "chooseSpot";
+
+  const onChooseMove = (e: ThreeEvent<PointerEvent>) => {
+    hoverSpot.x = e.point.x;
+    hoverSpot.z = e.point.z;
+    hoverSpot.active = isValidSpot(e.point.x, e.point.z);
+  };
+
+  const onChooseClick = (e: ThreeEvent<MouseEvent>) => {
+    if (isValidSpot(e.point.x, e.point.z)) {
+      useRitualStore
+        .getState()
+        .setCandidateSpot([e.point.x, e.point.z]);
+    }
+  };
+
   return (
     <>
-      <mesh geometry={geometry} material={MAT.terrain} receiveShadow />
+      <mesh
+        geometry={geometry}
+        material={MAT.terrain}
+        receiveShadow
+        onPointerMove={choosing ? onChooseMove : undefined}
+        onClick={choosing ? onChooseClick : undefined}
+      />
       {/* Бесконечный луг до горизонта: туман растворяет край */}
       <mesh
         position={[0, -0.02, 0]}

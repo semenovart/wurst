@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { Splash } from "@/components/Splash";
+import { Hud } from "@/components/hud/Hud";
 import { hasWebGL } from "@/lib/device";
 import { STR } from "@/lib/strings.ru";
 
@@ -58,10 +59,13 @@ export function Experience() {
         </div>
       )}
 
+      {/* DOM-интерфейс поверх сцены */}
+      {mode === "3d" && <Hud />}
+
       {/* Сплэш поверх всего, пока сцена не готова */}
       <div
         aria-hidden={sceneReady}
-        className={`absolute inset-0 transition-opacity duration-700 ${
+        className={`absolute inset-0 z-20 transition-opacity duration-700 ${
           sceneReady ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
