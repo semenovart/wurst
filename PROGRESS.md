@@ -1,6 +1,6 @@
 # PROGRESS — журнал реализации «Сосиска-диггер»
 
-> **Текущий стейдж: S6 · Следующий шаг: S6.1 redis.ts (Upstash | memory) + keys.ts**
+> **Текущий стейдж: S7 · Следующий шаг: S7.1 engine.ts (unlock, шины, iOS-буфер)**
 >
 > Правила: после каждого шага — отметка здесь + коммит `S<стейдж>.<шаг>: <что сделано>`.
 > Новая сессия: прочитай этот файл и [PLAN.md](PLAN.md), продолжай со «Следующего шага».
@@ -15,8 +15,8 @@
 | S3 | Копание | ✅ |
 | S4 | Сосиска, засыпка, утаптывание | ✅ |
 | S5 | Церемония + сертификат (клиент) | ✅ |
-| S6 | Бэкенд + стена + share | 🔄 |
-| S7 | Звук + вибро | ⬜ |
+| S6 | Бэкенд + стена + share | ✅ |
+| S7 | Звук + вибро | 🔄 |
 | S8 | Полировка + прод | ⬜ |
 
 ## Чеклисты
@@ -73,16 +73,16 @@
 - [x] S5.DoD финал в браузере (золотое небо+радуга на скриншоте), сертификат проверен пиксельно (2400×1260, титул чернилами, 493КБ PNG)
 
 ### S6 · Бэкенд + стена + share
-- [ ] S6.1 redis.ts (Upstash | memory) + keys.ts
-- [ ] S6.2 validation.ts (zod) + ids.ts
-- [ ] S6.3 moderation.ts + vitest
-- [ ] S6.4 ratelimit.ts
-- [ ] S6.5 роуты burial/wish/wall/admin
-- [ ] S6.6 burialApi.ts (async POST, ретраи, «№ ~N»)
-- [ ] S6.7 CounterBadge + WallPanel + WishForm
-- [ ] S6.8 /s/[id] + оба opengraph-image
-- [ ] S6.9 фаза returned
-- [ ] S6.DoD curl-чеклист, повторный визит, OG 200 image/png
+- [x] S6.1 redis.ts (Upstash | memory через globalThis) + keys.ts
+- [x] S6.2 validation.ts (zod) + ids.ts
+- [x] S6.3 moderation.ts + 33 vitest (две нормализации: cyr и lat, «3»→«з» по-русски)
+- [x] S6.4 ratelimit.ts (@upstash/ratelimit | memory sliding window)
+- [x] S6.5 роуты burial/wish/wall/admin (sha256+timingSafeEqual)
+- [x] S6.6 burialApi.ts (async POST на старте церемонии, ретраи, «№ ~N»)
+- [x] S6.7 CounterBadge + WallPanel + WishForm (в модалке сертификата)
+- [x] S6.8 /s/[id] + оба opengraph-image (satori, TTF, кириллица — проверен глазами)
+- [x] S6.9 фаза returned (карточка + холмик с флажком MoundFlag)
+- [x] S6.DoD curl: 201×5→429, мат→422, wish 200→409, wall count+записи, admin 401, OG 200 png; повторный визит → returned; счётчик «2 сосиски» и стена в UI
 
 ### S7 · Звук + вибро
 - [ ] S7.1 engine.ts (unlock, шины, iOS-буфер)
@@ -102,6 +102,8 @@
 - [ ] S8.DoD прод-ссылка с личной OG-карточкой
 
 ## Журнал (append-only)
+
+- 2026-07-15 · S6 завершён, все API проверены curl'ом на dev (memory-redis), OG-сертификат отрендерен satori и проверен визуально (кириллица, Caveat, печать, радуга). Нюансы: (1) модерация — две раздельные нормализации: латиница→кириллица ломает английские слова, поэтому en-словарь матчится по «латинскому» взгляду, «3»→«з» в русском leet; (2) satori overflow-клип радуги не сработал — полные круги, выглядит мило, оставлено; (3) в memory-redis данные и лимиты живут до рестарта dev-сервера — для сброса rate limit перезапускать сервер.
 
 - 2026-07-15 · S5 завершён. ceremonyMix — модульная шина (0..1): каждый сценный компонент сам лерпит своё состояние в useFrame, дирижёр Ceremony только пишет значение и стреляет конфетти; certificate остаётся в золоте, выход из фаз затухает. Линтер: set-state-in-effect лечится либо key-remount (CeremonyCaptions монтируется только в ceremony), либо derived-state (CertificatePanel c initialOpen). Сертификат: печать по кругу через per-char rotate, имя Caveat'ом. «Поделиться» и номер сосиски ждут S6.
 
