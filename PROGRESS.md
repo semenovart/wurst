@@ -1,6 +1,6 @@
 # PROGRESS — журнал реализации «Сосиска-диггер»
 
-> **Текущий стейдж: S8 · Следующий шаг: РУЧНЫЕ ДЕЙСТВИЯ ПОЛЬЗОВАТЕЛЯ — S8.6 деплой на Vercel (инструкция в README.md) и S8.7 проверка на реальных устройствах (звук ушами, вибро, share). Код готов.**
+> **Текущий стейдж: S8 · Задеплоено на https://wurst.semenovart.ru (Vercel + свой домен). Осталось: (1) проверить env в Vercel — NEXT_PUBLIC_SITE_URL=https://wurst.semenovart.ru и UPSTASH_* (+Redeploy), (2) S8.7 девайс-проверки (звук, вибро, share), (3) OG через @WebpageBot.**
 >
 > Правила: после каждого шага — отметка здесь + коммит `S<стейдж>.<шаг>: <что сделано>`.
 > Новая сессия: прочитай этот файл и [PLAN.md](PLAN.md), продолжай со «Следующего шага».
@@ -102,6 +102,8 @@
 - [ ] S8.DoD прод-ссылка с личной OG-карточкой — после деплоя
 
 ## Журнал (append-only)
+
+- 2026-07-15 · Прод жив: пользователь задеплоил на Vercel и привязал домен https://wurst.semenovart.ru. Грабли DNS: в панели Majordomo были добавлены одновременно NS (ns1/ns2.vercel-dns.com — от вкладки «Vercel DNS») и CNAME для wurst → конфликт (CNAME не сосуществует с другими записями; NS-делегация уводила резолверы в несуществующую зону) → Invalid Configuration/NXDOMAIN. Фикс: NS удалены, остался только CNAME 6ba9b78fd42df009.vercel-dns-017.com. Диагностика из песочницы: прямые DNS-запросы (порт 53) блокируются — проверять через DoH (curl https://dns.google/resolve?…), HTTPS — curl --resolve host:443:IP (локальный резолвер кеширует NXDOMAIN по SOA min 3600). Проверено: TLS выпущен, / отдаёт наш title, GET /api/wall → 200 {"count":1} (кто-то уже закопал). Осталось: env NEXT_PUBLIC_SITE_URL + проверка UPSTASH_* в Vercel, S8.7.
 
 - 2026-07-15 · Код залит на GitHub: https://github.com/semenovart/wurst (main, публичный). Auth через gh CLI (пользователь выполнил gh auth login, протокол https). Это упрощает S8.6: в Vercel теперь можно просто Import Git Repository → semenovart/wurst, env-переменные по таблице из README.md.
 
