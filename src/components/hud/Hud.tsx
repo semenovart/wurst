@@ -4,6 +4,7 @@ import { CountdownBadge } from "./CountdownBadge";
 import { DialogueBubble } from "./DialogueBubble";
 import { PhaseHint } from "./PhaseHint";
 import { SpotConfirm } from "./SpotConfirm";
+import { ProgressRing } from "./ProgressRing";
 import { useRitualStore } from "@/store/ritualStore";
 
 /**
@@ -18,6 +19,7 @@ export function Hud() {
       {/* верхняя панель */}
       <div className="flex items-start justify-between p-3">
         <CountdownBadge className="scale-90 origin-top-left" />
+        <ProgressRing />
         {/* справа появится MuteButton (S7) и счётчик (S6) */}
         <div />
       </div>

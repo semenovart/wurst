@@ -35,15 +35,14 @@ describe("машина фаз ритуала", () => {
     expect(s().candidateSpot).toBeNull();
   });
 
-  it("dig не выпускает, пока яма не выкопана", () => {
+  it("dig не выпускает, пока яма не выкопана, и сам продвигает на 100%", () => {
     s().advance();
     s().setCandidateSpot([0, 0]);
     s().confirmSpot();
     s().setDigProgress(0.7);
     s().advance();
     expect(s().phase).toBe("dig");
-    s().setDigProgress(1);
-    s().advance();
+    s().setDigProgress(1); // авто-advance внутри
     expect(s().phase).toBe("place");
   });
 
@@ -51,11 +50,11 @@ describe("машина фаз ритуала", () => {
     s().advance();
     s().setCandidateSpot([0, 0]);
     s().confirmSpot();
-    s().setDigProgress(1);
-    s().advance(); // place
-    s().advance(); // fill (у place нет guard'а — сосиска уложена скриптом)
-    s().setFillProgress(1);
-    s().advance(); // tamp
+    s().setDigProgress(1); // → place (авто)
+    s().advance(); // place → fill (у place нет guard'а — сосиска уложена скриптом)
+    expect(s().phase).toBe("fill");
+    s().setFillProgress(1); // → tamp (авто)
+    expect(s().phase).toBe("tamp");
     for (let i = 0; i < TAMP_GOAL; i++) s().tamp();
     expect(s().phase).toBe("ceremony"); // tamp сам вызывает advance на цели
     s().advance();

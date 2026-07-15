@@ -1,10 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, useEffect, useState, type ReactNode } from "react";
+import { Component, useState, type ReactNode } from "react";
 import { Splash } from "@/components/Splash";
 import { Hud } from "@/components/hud/Hud";
-import { hasWebGL } from "@/lib/device";
+import { useHasWebGL } from "@/lib/device";
 import { STR } from "@/lib/strings.ru";
 
 const Scene3D = dynamic(() => import("@/components/scene/Scene3D"), {
@@ -36,12 +36,10 @@ function FallbackStub() {
  * лежит снизу и плавно растворяется, когда сцена готова.
  */
 export function Experience() {
-  const [mode, setMode] = useState<"detect" | "3d" | "2d">("detect");
+  const webgl = useHasWebGL();
   const [sceneReady, setSceneReady] = useState(false);
-
-  useEffect(() => {
-    setMode(hasWebGL() ? "3d" : "2d");
-  }, []);
+  // На сервере webgl=false → рендерится только сплэш; клиент решает сам
+  const mode: "3d" | "2d" = webgl ? "3d" : "2d";
 
   return (
     <div className="relative h-full w-full">

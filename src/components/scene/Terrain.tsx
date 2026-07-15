@@ -1,13 +1,21 @@
-import { useMemo, useEffect } from "react";
-import type { ThreeEvent } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { MAT, PALETTE } from "./materials";
 import { useRitualStore } from "@/store/ritualStore";
-import { hoverSpot } from "./interactionBus";
-import { isValidSpot } from "./constants";
+import { hoverSpot, digPointer, fxBus } from "./interactionBus";
+import { isValidSpot, HOLE_R } from "./constants";
 
 export const TERRAIN_SIZE = 14;
 export const TERRAIN_SEGS = 96;
+
+/** Глубина готовой ямы и высота бортика вынутой земли */
+export const MAX_DEPTH = 0.55;
+const RIM_H = 0.1;
+/** Радиус мазка кисти */
+const BRUSH_R = 0.55;
+/** Высота холмика после засыпки (S4) */
+export const MOUND_H = 0.2;
 
 /** Стабильный «шум» по координатам — оттенок травинок без текстур */
 function hash2(x: number, z: number): number {
@@ -52,17 +60,228 @@ function buildTerrainGeometry(): THREE.PlaneGeometry {
   return geo;
 }
 
+type Zone = {
+  /** Вершины в радиусе действия кисти (яма + бортик) */
+  indices: number[];
+  /** Расстояние каждой зонной вершины до центра ямы */
+  distFromSpot: Float32Array;
+  /** Идеальная глубина боула для каждой вершины (0 за пределами ямы) */
+  idealDepth: Float32Array;
+  /** Σ идеальных глубин — знаменатель прогресса */
+  targetSum: number;
+  /** Базовые цвета зоны (для смешивания трава→земля) */
+  baseColors: Float32Array;
+  cx: number;
+  cz: number;
+};
+
+const GRASS_TO_DIRT = new THREE.Color(PALETTE.dirt);
+const DIRT_DARK = new THREE.Color(PALETTE.dirtDark);
+
 /**
- * Деформируемая лужайка. В S1 — статичная; кисть копания добавляется в S3
- * (мутирует attributes.position/color этой же геометрии).
+ * Деформируемая лужайка: выбор места (chooseSpot) и кисть копания (dig).
+ * Вся деформация — мутация attributes.position/color; React не участвует.
  */
 export function Terrain() {
-  const geometry = useMemo(buildTerrainGeometry, []);
+  const geometry = useMemo(() => buildTerrainGeometry(), []);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   const phase = useRitualStore((s) => s.phase);
-  const choosing = phase === "chooseSpot";
+  const spot = useRitualStore((s) => s.spot);
 
+  const zoneRef = useRef<Zone | null>(null);
+  const dirtyRef = useRef(false);
+  const draggingRef = useRef(false);
+  const lastPtRef = useRef(new THREE.Vector3());
+  const hasLastPt = useRef(false);
+  const lastBurstAt = useRef(0);
+  const dugSinceBurst = useRef(0);
+
+  // Предвычисление зоны при фиксации места
+  useEffect(() => {
+    if (!spot) {
+      zoneRef.current = null;
+      return;
+    }
+    const [cx, cz] = spot;
+    const pos = geometry.attributes.position as THREE.BufferAttribute;
+    const col = geometry.attributes.color as THREE.BufferAttribute;
+    const indices: number[] = [];
+    const outerR = HOLE_R * 1.45;
+    for (let i = 0; i < pos.count; i++) {
+      const dx = pos.getX(i) - cx;
+      const dz = pos.getZ(i) - cz;
+      if (dx * dx + dz * dz <= outerR * outerR) indices.push(i);
+    }
+    const distFromSpot = new Float32Array(indices.length);
+    const idealDepth = new Float32Array(indices.length);
+    const baseColors = new Float32Array(indices.length * 3);
+    let targetSum = 0;
+    indices.forEach((vi, k) => {
+      const dx = pos.getX(vi) - cx;
+      const dz = pos.getZ(vi) - cz;
+      const d = Math.hypot(dx, dz);
+      distFromSpot[k] = d;
+      const ideal =
+        d < HOLE_R ? MAX_DEPTH * Math.cos(((d / HOLE_R) * Math.PI) / 2) : 0;
+      idealDepth[k] = ideal;
+      targetSum += ideal;
+      baseColors[k * 3] = col.getX(vi);
+      baseColors[k * 3 + 1] = col.getY(vi);
+      baseColors[k * 3 + 2] = col.getZ(vi);
+    });
+    zoneRef.current = {
+      indices,
+      distFromSpot,
+      idealDepth,
+      targetSum,
+      baseColors,
+      cx,
+      cz,
+    };
+  }, [spot, geometry]);
+
+  /** Смешивание цвета вершины: трава → земля по фактической глубине */
+  const mixDirtColor = (zone: Zone, k: number, vi: number, y: number) => {
+    const col = geometry.attributes.color as THREE.BufferAttribute;
+    // 0 на поверхности, 1 на дне; бортик тоже слегка «пачкается»
+    const t = THREE.MathUtils.clamp(
+      y < 0 ? -y / (MAX_DEPTH * 0.85) : y > 0.02 ? 0.35 : 0,
+      0,
+      1,
+    );
+    if (t <= 0) {
+      col.setXYZ(
+        vi,
+        zone.baseColors[k * 3] ?? 0,
+        zone.baseColors[k * 3 + 1] ?? 0,
+        zone.baseColors[k * 3 + 2] ?? 0,
+      );
+      return;
+    }
+    const shade = 0.85 + hash2(vi, k) * 0.3;
+    const base = t < 0.7 ? GRASS_TO_DIRT : DIRT_DARK;
+    col.setXYZ(
+      vi,
+      THREE.MathUtils.lerp(zone.baseColors[k * 3] ?? 0, base.r * shade, t),
+      THREE.MathUtils.lerp(zone.baseColors[k * 3 + 1] ?? 0, base.g * shade, t),
+      THREE.MathUtils.lerp(zone.baseColors[k * 3 + 2] ?? 0, base.b * shade, t),
+    );
+  };
+
+  /** Один мазок кисти в точке p; dir=-1 копаем, +1 засыпаем (S4) */
+  const applyBrush = (px: number, pz: number, dir: -1 | 1, strength: number) => {
+    const zone = zoneRef.current;
+    if (!zone) return;
+    const pos = geometry.attributes.position as THREE.BufferAttribute;
+
+    zone.indices.forEach((vi, k) => {
+      const dx = pos.getX(vi) - px;
+      const dz = pos.getZ(vi) - pz;
+      const dPointer = Math.hypot(dx, dz);
+      if (dPointer > BRUSH_R) return;
+
+      const dSpot = zone.distFromSpot[k] ?? Infinity;
+      const fall = Math.cos(((dPointer / BRUSH_R) * Math.PI) / 2) ** 2;
+      let y = pos.getY(vi);
+
+      if (dir < 0) {
+        if (dSpot < HOLE_R) {
+          // Внутри ямы: копаем к идеальному боулу (центр поддаётся легче)
+          const centerBias = 0.55 + 0.45 * ((zone.idealDepth[k] ?? 0) / MAX_DEPTH);
+          y = Math.max(y - strength * fall * centerBias, -(zone.idealDepth[k] ?? 0));
+        } else {
+          // Бортик слегка нарастает от выброса земли
+          y = Math.min(y + strength * fall * 0.18, RIM_H);
+        }
+      } else {
+        // Засыпание: поднимаем к профилю холмика
+        const target =
+          dSpot < HOLE_R
+            ? MOUND_H * Math.cos(((dSpot / HOLE_R) * Math.PI) / 2) ** 2
+            : pos.getY(vi);
+        y = Math.min(y + strength * fall, target);
+      }
+
+      pos.setY(vi, y);
+      mixDirtColor(zone, k, vi, y);
+      if (dir < 0 && dSpot < HOLE_R) dugSinceBurst.current += strength * fall;
+    });
+
+    dirtyRef.current = true;
+  };
+
+  /** Мазок вдоль отрезка a→b (быстрые свайпы интерполируются) */
+  const applyStroke = (
+    ax: number,
+    az: number,
+    bx: number,
+    bz: number,
+    dir: -1 | 1,
+  ) => {
+    const len = Math.hypot(bx - ax, bz - az);
+    const steps = Math.max(1, Math.ceil(len / (BRUSH_R * 0.45)));
+    const strength = THREE.MathUtils.clamp(0.025 + len * 0.2, 0.03, 0.13);
+    for (let s = 0; s < steps; s++) {
+      const t = steps === 1 ? 1 : s / (steps - 1);
+      applyBrush(
+        THREE.MathUtils.lerp(ax, bx, t),
+        THREE.MathUtils.lerp(az, bz, t),
+        dir,
+        strength / Math.sqrt(steps),
+      );
+    }
+  };
+
+  // Пересчёт нормалей/прогресса — не чаще раза за кадр
+  useFrame(({ clock }) => {
+    if (!dirtyRef.current) return;
+    dirtyRef.current = false;
+    const zone = zoneRef.current;
+    geometry.computeVertexNormals();
+    (geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    (geometry.attributes.color as THREE.BufferAttribute).needsUpdate = true;
+    const normal = geometry.attributes.normal;
+    if (normal) normal.needsUpdate = true;
+
+    if (zone && zone.targetSum > 0) {
+      const pos = geometry.attributes.position as THREE.BufferAttribute;
+      const st = useRitualStore.getState();
+      if (st.phase === "dig") {
+        let dug = 0;
+        zone.indices.forEach((vi, k) => {
+          const y = pos.getY(vi);
+          if (y < 0) dug += Math.min(-y, zone.idealDepth[k] ?? 0);
+        });
+        // Яма «готова» при 80% идеального объёма: кламп кисти делает
+        // последние проценты асимптотическими — не мучаем пользователя
+        const norm = Math.min(1, dug / zone.targetSum / 0.8);
+        // Квантуем, чтобы не дёргать React каждый кадр
+        const q = Math.round(norm * 20) / 20;
+        st.setDigProgress(q);
+      }
+    }
+
+    // Комья летят порциями (не чаще раза в 70 мс)
+    const now = clock.elapsedTime;
+    if (dugSinceBurst.current > 0.05 && now - lastBurstAt.current > 0.07) {
+      const zone2 = zoneRef.current;
+      if (zone2) {
+        fxBus.spawn({
+          x: digPointer.x,
+          y: 0.15,
+          z: digPointer.z,
+          count: Math.min(7, 2 + Math.floor(dugSinceBurst.current * 40)),
+          kind: "dirt",
+        });
+        digPointer.lastBiteAt = now;
+      }
+      dugSinceBurst.current = 0;
+      lastBurstAt.current = now;
+    }
+  });
+
+  // ── Обработчики фазы chooseSpot ──
   const onChooseMove = (e: ThreeEvent<PointerEvent>) => {
     hoverSpot.x = e.point.x;
     hoverSpot.z = e.point.z;
@@ -71,11 +290,51 @@ export function Terrain() {
 
   const onChooseClick = (e: ThreeEvent<MouseEvent>) => {
     if (isValidSpot(e.point.x, e.point.z)) {
-      useRitualStore
-        .getState()
-        .setCandidateSpot([e.point.x, e.point.z]);
+      useRitualStore.getState().setCandidateSpot([e.point.x, e.point.z]);
     }
   };
+
+  // ── Обработчики копания (dig; в S4 сюда добавится fill) ──
+  const digDir: -1 | 1 = phase === "fill" ? 1 : -1;
+
+  const onDigDown = (e: ThreeEvent<PointerEvent>) => {
+    // capture может бросить InvalidPointerId (синтетические события, edge-кейсы) —
+    // копание от этого зависеть не должно
+    try {
+      (e.target as Element).setPointerCapture(e.pointerId);
+    } catch {
+      /* без capture тоже работаем */
+    }
+    draggingRef.current = true;
+    digPointer.pressing = true;
+    lastPtRef.current.copy(e.point);
+    hasLastPt.current = true;
+    applyStroke(e.point.x, e.point.z, e.point.x, e.point.z, digDir);
+  };
+
+  const onDigMove = (e: ThreeEvent<PointerEvent>) => {
+    digPointer.x = e.point.x;
+    digPointer.z = e.point.z;
+    digPointer.active = true;
+    if (!draggingRef.current || !hasLastPt.current) return;
+    applyStroke(
+      lastPtRef.current.x,
+      lastPtRef.current.z,
+      e.point.x,
+      e.point.z,
+      digDir,
+    );
+    lastPtRef.current.copy(e.point);
+  };
+
+  const endDig = () => {
+    draggingRef.current = false;
+    hasLastPt.current = false;
+    digPointer.pressing = false;
+  };
+
+  const choosing = phase === "chooseSpot";
+  const earthwork = phase === "dig" || phase === "fill";
 
   return (
     <>
@@ -83,8 +342,20 @@ export function Terrain() {
         geometry={geometry}
         material={MAT.terrain}
         receiveShadow
-        onPointerMove={choosing ? onChooseMove : undefined}
+        onPointerMove={
+          choosing ? onChooseMove : earthwork ? onDigMove : undefined
+        }
         onClick={choosing ? onChooseClick : undefined}
+        onPointerDown={earthwork ? onDigDown : undefined}
+        onPointerUp={earthwork ? endDig : undefined}
+        onPointerLeave={
+          earthwork
+            ? () => {
+                digPointer.active = false;
+                endDig();
+              }
+            : undefined
+        }
       />
       {/* Бесконечный луг до горизонта: туман растворяет край */}
       <mesh

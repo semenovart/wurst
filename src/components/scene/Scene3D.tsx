@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { SkyDome } from "./SkyDome";
 import { Lights } from "./Lights";
@@ -10,6 +10,9 @@ import { Lawn } from "./Lawn";
 import { CloudField } from "./CloudField";
 import { Mascot } from "./Mascot";
 import { SpotMarker } from "./SpotMarker";
+import { DirtParticles } from "./DirtParticles";
+import { DirtMound } from "./DirtMound";
+import { Shovel } from "./Shovel";
 import { CameraRig } from "./CameraRig";
 import { useRitualStore } from "@/store/ritualStore";
 
@@ -18,6 +21,18 @@ function ReadySignal({ onReady }: { onReady?: () => void }) {
   useEffect(() => {
     onReady?.();
   }, [onReady]);
+  return null;
+}
+
+/** Дев-доступ к R3F-состоянию из консоли (отладка камеры/рейкаста) */
+function DevHook() {
+  const get = useThree((s) => s.get);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__three = get;
+    }
+  }, [get]);
   return null;
 }
 
@@ -39,6 +54,9 @@ function SceneContent() {
       <CloudField />
       <Mascot />
       <SpotMarker />
+      <DirtMound />
+      <DirtParticles />
+      <Shovel />
       <CameraRig phase={phase} spot={spotVec} />
     </>
   );
@@ -57,6 +75,7 @@ export default function Scene3D({ onReady }: { onReady?: () => void }) {
     >
       <SceneContent />
       <ReadySignal onReady={onReady} />
+      <DevHook />
     </Canvas>
   );
 }

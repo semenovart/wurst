@@ -114,12 +114,15 @@ export const createRitualState: StateCreator<RitualState> = (set, get) => ({
     const clamped = Math.min(1, Math.max(0, v));
     if (Math.abs(clamped - get().digProgress) < 0.001) return;
     set({ digProgress: clamped });
+    // Яма готова → сразу следующий этап, без лишнего тапа
+    if (clamped >= 1 && get().phase === "dig") get().advance();
   },
 
   setFillProgress: (v) => {
     const clamped = Math.min(1, Math.max(0, v));
     if (Math.abs(clamped - get().fillProgress) < 0.001) return;
     set({ fillProgress: clamped });
+    if (clamped >= 1 && get().phase === "fill") get().advance();
   },
 
   tamp: () => {
@@ -143,6 +146,7 @@ export const createRitualState: StateCreator<RitualState> = (set, get) => ({
 
 type PersistedSlice = Pick<RitualState, "guestName" | "burial" | "muted">;
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const useRitualStore = create<RitualState>()(
   subscribeWithSelector(
     persist(createRitualState, {
@@ -165,3 +169,8 @@ export const useRitualStore = create<RitualState>()(
     }),
   ),
 );
+
+// Дев-инструментация: доступ к стору из консоли/автотестов
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+  (window as any).__ritual = useRitualStore;
+}
