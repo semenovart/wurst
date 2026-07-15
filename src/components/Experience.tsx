@@ -35,10 +35,13 @@ class SceneErrorBoundary extends Component<
 export function Experience() {
   const webgl = useHasWebGL();
   const [sceneReady, setSceneReady] = useState(false);
+  // Сплэш — стартовый экран: держится до явного входа по кнопке
+  const [entered, setEntered] = useState(false);
   // На сервере webgl=false → рендерится только сплэш; клиент решает сам
   const mode: "3d" | "2d" = webgl ? "3d" : "2d";
 
-  // Звук разблокируется первым касанием (браузерная политика)
+  // Звук разблокируется первым касанием (браузерная политика);
+  // обычно это тап по кнопке «На лужайку» — эмбиент стартует сразу за ним
   useEffect(() => {
     initAudio(startAmbient);
   }, []);
@@ -62,16 +65,17 @@ export function Experience() {
       {/* DOM-интерфейс (сертификат/стена/счётчик) нужен в обоих режимах */}
       <Hud gestures={mode === "3d"} />
 
-      {/* Сплэш поверх всего, пока 3D-сцена не готова (в 2d гаснет сразу) */}
+      {/* Сплэш-титульник поверх всего: уходит по кнопке «На лужайку» */}
       <div
-        aria-hidden={sceneReady || mode === "2d"}
+        aria-hidden={entered}
         className={`absolute inset-0 z-20 transition-opacity duration-700 ${
-          sceneReady || mode === "2d"
-            ? "pointer-events-none opacity-0"
-            : "opacity-100"
+          entered ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
-        <Splash />
+        <Splash
+          ready={sceneReady || mode === "2d"}
+          onStart={() => setEntered(true)}
+        />
       </div>
     </div>
   );

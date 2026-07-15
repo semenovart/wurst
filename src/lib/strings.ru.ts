@@ -35,6 +35,7 @@ export const STR = {
     agency: "МЕТЕОРИТУАЛЬНАЯ СЛУЖБА",
     subtitle: "отдел обеспечения свадебной погоды",
     loading: "Готовим лужайку…",
+    enter: "На лужайку",
     weddingOf: (couple: string) => `Свадьба ${couple}`,
   },
 

@@ -2,12 +2,22 @@ import { wedding } from "@/config/wedding.config";
 import { STR } from "@/lib/strings.ru";
 import { SausageFace } from "@/components/SausageFace";
 import { CountdownBadge } from "@/components/hud/CountdownBadge";
+import { Button } from "@/components/hud/ui";
 
 /**
- * Серверный сплэш: рендерится мгновенно (LCP), пока лениво едет 3D-чанк.
- * После загрузки сцены Experience плавно накрывает его.
+ * Стартовый экран: рендерится мгновенно (LCP), пока лениво едет 3D-чанк.
+ * Когда сцена готова (ready) — показывает кнопку входа; тап по ней заодно
+ * разблокирует WebAudio (первый жест пользователя).
  */
-export function Splash({ loadingLabel }: { loadingLabel?: string }) {
+export function Splash({
+  loadingLabel,
+  ready = false,
+  onStart,
+}: {
+  loadingLabel?: string;
+  ready?: boolean;
+  onStart?: () => void;
+}) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-5 bg-gradient-to-b from-sky to-sky-deep px-6 pb-safe pt-safe text-center">
       <p className="animate-fade-up text-[11px] font-bold uppercase tracking-[0.25em] text-cream/80">
@@ -30,12 +40,21 @@ export function Splash({ loadingLabel }: { loadingLabel?: string }) {
 
       <CountdownBadge className="animate-fade-up [animation-delay:240ms]" />
 
-      <p
-        className="animate-fade-up text-sm text-cream/70 [animation-delay:360ms]"
-        aria-live="polite"
-      >
-        {loadingLabel ?? STR.splash.loading}
-      </p>
+      {/* Пока чанк сцены грузится — статус; когда готово — вход по кнопке */}
+      <div className="flex min-h-14 items-center" aria-live="polite">
+        {onStart && ready ? (
+          <Button
+            onClick={onStart}
+            className="animate-fade-up px-8 py-4 text-lg shadow-xl"
+          >
+            {STR.splash.enter}
+          </Button>
+        ) : (
+          <p className="animate-fade-up text-sm text-cream/70">
+            {loadingLabel ?? STR.splash.loading}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
