@@ -19,6 +19,22 @@ const SAUSAGE_PATH =
   "C 64 189 52 160 60 134 C 66 112 82 94 112 86 " +
   "C 150 44 260 26 380 30 C 466 33 520 42 546 60";
 
+/**
+ * Перетяжки «связки сосисок»: точки на видимых участках витка
+ * (x, y, угол касательной) — поперечная перевязка в каждом звене.
+ */
+const TIES: Array<[number, number, number]> = [
+  [511, 235, -7],
+  [450, 239, -2],
+  [291, 237, 3],
+  [142, 221, 9],
+  [63, 173, 67],
+  [188, 47, -15],
+  [293, 31, -4],
+  [383, 30, 2],
+  [485, 39, 10],
+];
+
 /** Логотип «The Wurst Case Scenario» для сплэша (чисто декоративный) */
 export function SplashLogo({ className }: { className?: string }) {
   return (
@@ -41,45 +57,83 @@ export function SplashLogo({ className }: { className?: string }) {
         The
       </text>
 
-      {/* сосиска: тёмная подложка-контур + тело (под текстом) */}
+      {/* сосиска: тёмная подложка-контур + пухлое тело (под текстом) */}
       <path
         d={SAUSAGE_PATH}
         fill="none"
         stroke={SAUSAGE_DARK}
-        strokeWidth="31"
+        strokeWidth="40"
         strokeLinecap="round"
       />
       <path
         d={SAUSAGE_PATH}
         fill="none"
         stroke={SAUSAGE}
-        strokeWidth="24"
+        strokeWidth="32"
         strokeLinecap="round"
       />
 
-      {/* голова на конце витка — над правым краем слова */}
-      <g transform="translate(558 50) rotate(-16)">
+      {/* перетяжки между звеньями — это связка сосисок, а не червяк */}
+      {TIES.map(([x, y, a], i) => (
+        <line
+          key={i}
+          x1="0"
+          y1="-17"
+          x2="0"
+          y2="17"
+          transform={`translate(${x} ${y}) rotate(${a})`}
+          stroke={SAUSAGE_DARK}
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+      ))}
+
+      {/* узелок-перекрутка на хвосте */}
+      <g transform="translate(597 213) rotate(-27)">
+        <line
+          x1="0"
+          y1="-16"
+          x2="0"
+          y2="16"
+          stroke={SAUSAGE_DARK}
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
         <rect
-          x="-21"
-          y="-16"
-          width="42"
-          height="34"
-          rx="16"
+          x="7"
+          y="-8"
+          width="19"
+          height="16"
+          rx="8"
           fill={SAUSAGE}
           stroke={SAUSAGE_DARK}
           strokeWidth="4"
         />
-        <circle cx="-7" cy="-3" r="4.6" fill={INK} />
-        <circle cx="7" cy="-3" r="4.6" fill={INK} />
-        <circle cx="-5.4" cy="-4.6" r="1.5" fill="#ffffff" />
-        <circle cx="8.6" cy="-4.6" r="1.5" fill="#ffffff" />
-        <circle cx="-14" cy="4" r="3.4" fill={BLUSH} />
-        <circle cx="14" cy="4" r="3.4" fill={BLUSH} />
+      </g>
+
+      {/* голова на конце витка — во всю ширину тела */}
+      <g transform="translate(554 48) rotate(-12)">
+        <rect
+          x="-26"
+          y="-20"
+          width="52"
+          height="40"
+          rx="19"
+          fill={SAUSAGE}
+          stroke={SAUSAGE_DARK}
+          strokeWidth="5"
+        />
+        <circle cx="-8" cy="-4" r="5.2" fill={INK} />
+        <circle cx="8" cy="-4" r="5.2" fill={INK} />
+        <circle cx="-6.2" cy="-5.8" r="1.7" fill="#ffffff" />
+        <circle cx="9.8" cy="-5.8" r="1.7" fill="#ffffff" />
+        <circle cx="-17" cy="5" r="3.8" fill={BLUSH} />
+        <circle cx="17" cy="5" r="3.8" fill={BLUSH} />
         <path
-          d="M -5 5 Q 0 10 5 5"
+          d="M -6 6 Q 0 12 6 6"
           fill="none"
           stroke={INK}
-          strokeWidth="2.6"
+          strokeWidth="3"
           strokeLinecap="round"
         />
       </g>
