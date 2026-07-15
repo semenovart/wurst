@@ -1,9 +1,9 @@
-import { Splash } from "@/components/Splash";
+import { Experience } from "@/components/Experience";
 
 export default function Home() {
   return (
     <main className="h-dvh w-full overflow-hidden">
-      <Splash />
+      <Experience />
     </main>
   );
 }
