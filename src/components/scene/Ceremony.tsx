@@ -3,6 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { useRitualStore } from "@/store/ritualStore";
 import { usePrefersReducedMotion } from "@/lib/device";
 import { fxBus, ceremonyMix } from "./interactionBus";
+import { fanfare } from "@/lib/audio/sfx";
+import { haptic } from "@/lib/haptics";
 
 /**
  * Дирижёр финала: ведёт ceremonyMix (0→1), стреляет конфетти
@@ -16,7 +18,11 @@ export function Ceremony() {
 
   useFrame(({ clock }, dt) => {
     if (phase === "ceremony") {
-      if (t0.current === null) t0.current = clock.elapsedTime;
+      if (t0.current === null) {
+        t0.current = clock.elapsedTime;
+        fanfare();
+        haptic("fanfare");
+      }
       const t = clock.elapsedTime - t0.current;
 
       // Плавный вход в «золото» за ~2 с

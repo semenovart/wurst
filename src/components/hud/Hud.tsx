@@ -10,6 +10,7 @@ import { CeremonyCaptions } from "./CeremonyCaptions";
 import { CertificateModal } from "./CertificateModal";
 import { CounterBadge } from "./CounterBadge";
 import { WallPanel } from "./WallPanel";
+import { MuteButton } from "./MuteButton";
 import { STR } from "@/lib/strings.ru";
 import { useRitualStore } from "@/store/ritualStore";
 import { registerBurial } from "@/lib/burialApi";
@@ -61,8 +62,11 @@ export function Hud() {
       <div className="flex items-start justify-between gap-2 p-3">
         <CountdownBadge className="scale-90 origin-top-left" />
         <ProgressRing />
-        {/* справа: счётчик-кнопка стены (S7 добавит MuteButton) */}
-        <CounterBadge />
+        {/* справа: звук и стена почёта */}
+        <div className="flex items-start gap-2">
+          <MuteButton />
+          <CounterBadge />
+        </div>
       </div>
 
       {/* нижняя зона: диалог / подсказки / подтверждения */}

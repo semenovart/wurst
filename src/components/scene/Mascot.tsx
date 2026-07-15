@@ -6,6 +6,8 @@ import { MASCOT_HOME, HOLE_R } from "./constants";
 import { useRitualStore } from "@/store/ritualStore";
 import { fxBus, cameraShake } from "./interactionBus";
 import { MAX_DEPTH } from "./Terrain";
+import { pick, sausageSplat } from "@/lib/audio/sfx";
+import { haptic } from "@/lib/haptics";
 
 type MascotMode = "idle" | "dragged" | "returning" | "falling" | "buried";
 
@@ -58,6 +60,8 @@ export function Mascot() {
     e.stopPropagation();
     mode.current = "dragged";
     dragXZ.current = null;
+    pick();
+    haptic("clod");
   };
 
   const release = () => {
@@ -153,6 +157,8 @@ export function Mascot() {
           squashT.current = 0; // запускаем сплющивание
           fxBus.spawn({ x: spot[0], y: 0.2, z: spot[1], count: 10, kind: "dust" });
           cameraShake.intensity = 0.5;
+          sausageSplat();
+          haptic("splat");
           st.advance(); // place → fill
         }
         break;

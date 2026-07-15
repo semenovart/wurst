@@ -5,6 +5,8 @@ import { MAT, PALETTE } from "./materials";
 import { useRitualStore } from "@/store/ritualStore";
 import { hoverSpot, digPointer, fxBus, cameraShake } from "./interactionBus";
 import { isValidSpot, HOLE_R } from "./constants";
+import { digScrape, clodPlop, pour, tampThump } from "@/lib/audio/sfx";
+import { haptic } from "@/lib/haptics";
 
 export const TERRAIN_SIZE = 14;
 export const TERRAIN_SEGS = 96;
@@ -96,6 +98,8 @@ export function Terrain() {
   const hasLastPt = useRef(false);
   const lastBurstAt = useRef(0);
   const dugSinceBurst = useRef(0);
+  const pouredSinceSfx = useRef(0);
+  const lastPourAt = useRef(0);
   /** База для прогресса засыпки: высоты на входе в fill и сколько поднять */
   const fillBaseRef = useRef<{ startY: Float32Array; deltaSum: number } | null>(
     null,
@@ -237,7 +241,10 @@ export function Terrain() {
 
       pos.setY(vi, y);
       mixDirtColor(zone, k, vi, y);
-      if (dir < 0 && dSpot < HOLE_R) dugSinceBurst.current += strength * fall;
+      if (dSpot < HOLE_R) {
+        if (dir < 0) dugSinceBurst.current += strength * fall;
+        else pouredSinceSfx.current += strength * fall;
+      }
     });
 
     dirtyRef.current = true;
@@ -319,9 +326,20 @@ export function Terrain() {
           kind: "dirt",
         });
         digPointer.lastBiteAt = now;
+        digScrape(Math.min(1, dugSinceBurst.current * 6));
+        clodPlop(0.7);
+        haptic("dig");
       }
       dugSinceBurst.current = 0;
       lastBurstAt.current = now;
+    }
+
+    // Шорох засыпки (не чаще раза в 180 мс)
+    if (pouredSinceSfx.current > 0.05 && now - lastPourAt.current > 0.18) {
+      pour();
+      haptic("pour");
+      pouredSinceSfx.current = 0;
+      lastPourAt.current = now;
     }
   });
 
@@ -347,6 +365,8 @@ export function Terrain() {
       kind: "dust",
     });
     cameraShake.intensity = 0.55;
+    tampThump();
+    haptic("tamp");
     useRitualStore.getState().tamp();
   };
 

@@ -1,11 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, useState, type ReactNode } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 import { Splash } from "@/components/Splash";
 import { Hud } from "@/components/hud/Hud";
 import { useHasWebGL } from "@/lib/device";
 import { STR } from "@/lib/strings.ru";
+import { initAudio } from "@/lib/audio/engine";
+import { startAmbient } from "@/lib/audio/sfx";
 
 const Scene3D = dynamic(() => import("@/components/scene/Scene3D"), {
   ssr: false,
@@ -40,6 +42,11 @@ export function Experience() {
   const [sceneReady, setSceneReady] = useState(false);
   // На сервере webgl=false → рендерится только сплэш; клиент решает сам
   const mode: "3d" | "2d" = webgl ? "3d" : "2d";
+
+  // Звук разблокируется первым касанием (браузерная политика)
+  useEffect(() => {
+    initAudio(startAmbient);
+  }, []);
 
   return (
     <div className="relative h-full w-full">
