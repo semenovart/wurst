@@ -60,6 +60,19 @@ body {
   height: 100%;
 }
 
+html {
+  /* «Холст» за пределами документа: при панорамировании страницы мобильной
+     клавиатурой (iOS) сверху обнажается небо, снизу — трава, а не голубая
+     полоса под лужайкой */
+  background: linear-gradient(
+    to bottom,
+    var(--color-sky) 0%,
+    var(--color-sky) 55%,
+    var(--color-grass) 55%,
+    var(--color-grass) 100%
+  );
+}
+
 body {
   /* Никакого pull-to-refresh и резинового скролла — сцена занимает весь экран */
   overscroll-behavior: none;

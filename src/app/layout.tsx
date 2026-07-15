@@ -22,6 +22,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: "#7ec8f5",
+  // Клавиатура сжимает вьюпорт, а не панорамирует страницу
+  // (Chrome/Android; iOS игнорирует — для него градиент на html ниже)
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({
