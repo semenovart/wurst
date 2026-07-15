@@ -1,11 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { CountdownBadge } from "./CountdownBadge";
 import { DialogueBubble } from "./DialogueBubble";
 import { PhaseHint } from "./PhaseHint";
 import { SpotConfirm } from "./SpotConfirm";
 import { ProgressRing } from "./ProgressRing";
+import { CeremonyCaptions } from "./CeremonyCaptions";
+import { CertificateModal } from "./CertificateModal";
+import { STR } from "@/lib/strings.ru";
 import { useRitualStore } from "@/store/ritualStore";
+import { Button } from "./ui";
+
+/** Кнопка «Мой сертификат» + модалка; в certificate открыта сразу */
+function CertificatePanel({ initialOpen }: { initialOpen: boolean }) {
+  const [open, setOpen] = useState(initialOpen);
+  if (!open) {
+    return (
+      <Button onClick={() => setOpen(true)}>
+        {STR.returned.showCertificate}
+      </Button>
+    );
+  }
+  return <CertificateModal onClose={() => setOpen(false)} />;
+}
 
 /**
  * DOM-слой поверх канваса. Сам прозрачен для указателя;
@@ -28,6 +46,13 @@ export function Hud() {
       <div className="flex flex-col items-center gap-3 p-4 pb-6">
         {phase === "hello" && <DialogueBubble />}
         <SpotConfirm />
+        {phase === "ceremony" && <CeremonyCaptions />}
+        {(phase === "certificate" || phase === "returned") && (
+          <CertificatePanel
+            key={phase}
+            initialOpen={phase === "certificate"}
+          />
+        )}
         <PhaseHint />
       </div>
     </div>

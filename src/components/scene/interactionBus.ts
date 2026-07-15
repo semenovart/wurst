@@ -26,6 +26,12 @@ export const digPointer = {
 /** Тряска камеры: пишется событиями (утаптывание, шлепок), гасится CameraRig */
 export const cameraShake = { intensity: 0 };
 
+/**
+ * Прогресс церемонии 0..1: пишет Ceremony, читают SkyDome/Lights/CloudField/
+ * SunAndRainbow — небо золотеет, тучи расходятся, солнце выкатывается.
+ */
+export const ceremonyMix = { v: 0 };
+
 export type BurstKind = "dirt" | "dust" | "confetti";
 
 export type Burst = {

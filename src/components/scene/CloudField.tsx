@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { MAT } from "./materials";
+import { ceremonyMix } from "./interactionBus";
 
 type CloudSpec = {
   y: number;
@@ -89,11 +90,21 @@ export function CloudField() {
 
   useFrame((_, dt) => {
     const clampedDt = Math.min(dt, 0.05);
+    const m = ceremonyMix.v;
+    MAT.cloud.opacity = 1 - m;
     specs.forEach((spec, i) => {
       const g = groupRefs.current[i];
       if (!g) return;
-      g.position.x += spec.speed * clampedDt;
-      if (g.position.x > WRAP_X) g.position.x = -WRAP_X;
+      if (m >= 0.98) {
+        g.visible = false;
+        return;
+      }
+      g.visible = true;
+      // Обычный дрейф + церемониальный «разъезд» в свою сторону
+      const away = spec.x0 >= 0 ? 1 : -1;
+      g.position.x += (spec.speed + m * 3.2 * away) * clampedDt;
+      g.position.y += m * clampedDt * 0.7;
+      if (m < 0.02 && g.position.x > WRAP_X) g.position.x = -WRAP_X;
     });
   });
 

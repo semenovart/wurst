@@ -54,7 +54,7 @@ export const MAT = {
   blush: new THREE.MeshBasicMaterial({ color: PALETTE.blush }),
   ink: new THREE.MeshBasicMaterial({ color: PALETTE.ink }),
   eyeWhite: new THREE.MeshBasicMaterial({ color: "#ffffff" }),
-  cloud: toon(PALETTE.cloud),
+  cloud: toon(PALETTE.cloud, { transparent: true }),
   trunk: toon(PALETTE.trunk),
   leafA: toon(PALETTE.leafA),
   leafB: toon(PALETTE.leafB),
