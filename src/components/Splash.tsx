@@ -1,6 +1,6 @@
 import { wedding } from "@/config/wedding.config";
 import { STR } from "@/lib/strings.ru";
-import { SausageFace } from "@/components/SausageFace";
+import { SplashLogo } from "@/components/SplashLogo";
 import { CountdownBadge } from "@/components/hud/CountdownBadge";
 import { Button } from "@/components/hud/ui";
 
@@ -24,14 +24,11 @@ export function Splash({
         {STR.splash.agency}
       </p>
 
-      <div className="motion-safe-only animate-float-bob">
-        <SausageFace className="w-44 drop-shadow-xl sm:w-56" />
-      </div>
-
       <div className="animate-fade-up [animation-delay:120ms]">
-        <h1 className="text-3xl font-black tracking-tight text-cream drop-shadow sm:text-5xl">
-          {STR.meta.gameTitle}
-        </h1>
+        <h1 className="sr-only">{STR.meta.gameTitle}</h1>
+        <div className="motion-safe-only animate-float-bob">
+          <SplashLogo className="w-full max-w-sm drop-shadow-lg sm:max-w-lg" />
+        </div>
         <p className="mt-2 text-lg font-bold text-cream/95 drop-shadow">
           {STR.splash.weddingOf(wedding.coupleGenitive)}
         </p>

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource/rubik/400.css";
 import "@fontsource/rubik/700.css";
 import "@fontsource/caveat/700.css";
+import "@fontsource/lilita-one/latin-400.css";
 import "./globals.css";
 import { wedding } from "@/config/wedding.config";
 import { STR } from "@/lib/strings.ru";
