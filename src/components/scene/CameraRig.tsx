@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Phase } from "@/store/phases";
 import { cameraShake } from "./interactionBus";
+import { usePrefersReducedMotion } from "@/lib/device";
 
 type Pose = { pos: THREE.Vector3; look: THREE.Vector3; fov: number };
 
@@ -61,6 +62,7 @@ export function CameraRig({
 }) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
+  const reducedMotion = usePrefersReducedMotion();
   const lookTarget = useRef(new THREE.Vector3(0, 0.95, 0.6));
   const pose = useRef<Pose>({
     pos: new THREE.Vector3(),
@@ -78,13 +80,18 @@ export function CameraRig({
     camera.position.lerp(p.pos, k);
     lookTarget.current.lerp(p.look, k);
 
-    // Тряска (утаптывание/шлепок): затухающий шум поверх позы
+    // Тряска (утаптывание/шлепок): затухающий шум поверх позы.
+    // prefers-reduced-motion — гасим сразу, без визуального эффекта.
     if (cameraShake.intensity > 0.001) {
-      const a = cameraShake.intensity;
-      const t = clock.elapsedTime * 30;
-      camera.position.x += Math.sin(t * 1.3) * 0.05 * a;
-      camera.position.y += Math.sin(t * 1.7 + 1) * 0.04 * a;
-      cameraShake.intensity = Math.max(0, a - dt * 2.5);
+      if (reducedMotion) {
+        cameraShake.intensity = 0;
+      } else {
+        const a = cameraShake.intensity;
+        const t = clock.elapsedTime * 30;
+        camera.position.x += Math.sin(t * 1.3) * 0.05 * a;
+        camera.position.y += Math.sin(t * 1.7 + 1) * 0.04 * a;
+        cameraShake.intensity = Math.max(0, a - dt * 2.5);
+      }
     }
 
     camera.lookAt(lookTarget.current);

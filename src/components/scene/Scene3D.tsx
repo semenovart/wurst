@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
+import { AdaptiveDpr, PerformanceMonitor } from "@react-three/drei";
 import * as THREE from "three";
 import { SkyDome } from "./SkyDome";
 import { Lights } from "./Lights";
@@ -70,16 +71,24 @@ function SceneContent() {
 
 /**
  * 3D-сцена. Загружается лениво (three-чанк) из Experience.
+ * PerformanceMonitor снижает DPR на слабых устройствах (ступень «вниз»
+ * необратима в рамках сессии — стабильность дороже пиковой чёткости).
  */
 export default function Scene3D({ onReady }: { onReady?: () => void }) {
+  const [dprCap, setDprCap] = useState(2);
   return (
     <Canvas
       shadows
-      dpr={[1, 2]}
+      dpr={[1, dprCap]}
       camera={{ fov: 50, position: [0, 1.6, 4.4], near: 0.1, far: 90 }}
       gl={{ antialias: true, powerPreference: "high-performance" }}
     >
-      <SceneContent />
+      <PerformanceMonitor
+        onDecline={() => setDprCap((v) => (v > 1.3 ? 1.25 : 1))}
+      >
+        <SceneContent />
+      </PerformanceMonitor>
+      <AdaptiveDpr pixelated={false} />
       <ReadySignal onReady={onReady} />
       <DevHook />
     </Canvas>

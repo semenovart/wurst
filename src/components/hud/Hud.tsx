@@ -11,6 +11,7 @@ import { CertificateModal } from "./CertificateModal";
 import { CounterBadge } from "./CounterBadge";
 import { WallPanel } from "./WallPanel";
 import { MuteButton } from "./MuteButton";
+import { HoldDigButton } from "./HoldDigButton";
 import { STR } from "@/lib/strings.ru";
 import { useRitualStore } from "@/store/ritualStore";
 import { registerBurial } from "@/lib/burialApi";
@@ -46,8 +47,9 @@ function CertificatePanel({ initialOpen }: { initialOpen: boolean }) {
 /**
  * DOM-слой поверх канваса. Сам прозрачен для указателя;
  * интерактивны только конкретные элементы (pointer-events-auto).
+ * gestures=false (2d-фолбэк) прячет жестовые подсказки и прогресс.
  */
-export function Hud() {
+export function Hud({ gestures = true }: { gestures?: boolean }) {
   const phase = useRitualStore((s) => s.phase);
   const wallOpen = useRitualStore((s) => s.wallOpen);
 
@@ -61,7 +63,7 @@ export function Hud() {
       {/* верхняя панель */}
       <div className="flex items-start justify-between gap-2 p-3">
         <CountdownBadge className="scale-90 origin-top-left" />
-        <ProgressRing />
+        {gestures && <ProgressRing />}
         {/* справа: звук и стена почёта */}
         <div className="flex items-start gap-2">
           <MuteButton />
@@ -71,8 +73,9 @@ export function Hud() {
 
       {/* нижняя зона: диалог / подсказки / подтверждения */}
       <div className="flex flex-col items-center gap-3 p-4 pb-6">
-        {phase === "hello" && <DialogueBubble />}
-        <SpotConfirm />
+        {gestures && phase === "hello" && <DialogueBubble />}
+        {gestures && <SpotConfirm />}
+        {gestures && <HoldDigButton />}
         {phase === "ceremony" && <CeremonyCaptions />}
         {phase === "returned" && <ReturnedCard />}
         {(phase === "certificate" || phase === "returned") && (
@@ -81,7 +84,7 @@ export function Hud() {
             initialOpen={phase === "certificate"}
           />
         )}
-        <PhaseHint />
+        {gestures && <PhaseHint />}
       </div>
 
       {wallOpen && <WallPanel />}

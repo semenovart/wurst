@@ -4,8 +4,8 @@ import dynamic from "next/dynamic";
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { Splash } from "@/components/Splash";
 import { Hud } from "@/components/hud/Hud";
+import { Fallback2D } from "@/components/fallback/Fallback2D";
 import { useHasWebGL } from "@/lib/device";
-import { STR } from "@/lib/strings.ru";
 import { initAudio } from "@/lib/audio/engine";
 import { startAmbient } from "@/lib/audio/sfx";
 
@@ -28,11 +28,6 @@ class SceneErrorBoundary extends Component<
   }
 }
 
-/** Заглушка до полноценного Fallback2D (S8): ритуал «силой мысли» */
-function FallbackStub() {
-  return <Splash loadingLabel={STR.fallback2d.title} />;
-}
-
 /**
  * Оболочка опыта: детект WebGL → ленивый 3D; серверный сплэш
  * лежит снизу и плавно растворяется, когда сцена готова.
@@ -52,7 +47,7 @@ export function Experience() {
     <div className="relative h-full w-full">
       {mode === "3d" && (
         <div className="canvas-gesture-layer absolute inset-0">
-          <SceneErrorBoundary fallback={<FallbackStub />}>
+          <SceneErrorBoundary fallback={<Fallback2D />}>
             <Scene3D onReady={() => setSceneReady(true)} />
           </SceneErrorBoundary>
         </div>
@@ -60,18 +55,20 @@ export function Experience() {
 
       {mode === "2d" && (
         <div className="absolute inset-0">
-          <FallbackStub />
+          <Fallback2D />
         </div>
       )}
 
-      {/* DOM-интерфейс поверх сцены */}
-      {mode === "3d" && <Hud />}
+      {/* DOM-интерфейс (сертификат/стена/счётчик) нужен в обоих режимах */}
+      <Hud gestures={mode === "3d"} />
 
-      {/* Сплэш поверх всего, пока сцена не готова */}
+      {/* Сплэш поверх всего, пока 3D-сцена не готова (в 2d гаснет сразу) */}
       <div
-        aria-hidden={sceneReady}
+        aria-hidden={sceneReady || mode === "2d"}
         className={`absolute inset-0 z-20 transition-opacity duration-700 ${
-          sceneReady ? "pointer-events-none opacity-0" : "opacity-100"
+          sceneReady || mode === "2d"
+            ? "pointer-events-none opacity-0"
+            : "opacity-100"
         }`}
       >
         <Splash />

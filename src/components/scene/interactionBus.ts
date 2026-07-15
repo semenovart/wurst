@@ -32,6 +32,12 @@ export const cameraShake = { intensity: 0 };
  */
 export const ceremonyMix = { v: 0 };
 
+/**
+ * Доступность: альтернатива жестам. Кнопка «Копать» (удержание) пишет
+ * digging, тапы по кнопке утаптывания — tampPulses; Terrain исполняет.
+ */
+export const holdAction = { digging: false, tampPulses: 0 };
+
 export type BurstKind = "dirt" | "dust" | "confetti";
 
 export type Burst = {

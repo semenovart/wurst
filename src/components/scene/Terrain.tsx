@@ -3,7 +3,13 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { MAT, PALETTE } from "./materials";
 import { useRitualStore } from "@/store/ritualStore";
-import { hoverSpot, digPointer, fxBus, cameraShake } from "./interactionBus";
+import {
+  hoverSpot,
+  digPointer,
+  fxBus,
+  cameraShake,
+  holdAction,
+} from "./interactionBus";
 import { isValidSpot, HOLE_R } from "./constants";
 import { digScrape, clodPlop, pour, tampThump } from "@/lib/audio/sfx";
 import { haptic } from "@/lib/haptics";
@@ -93,6 +99,7 @@ export function Terrain() {
 
   const zoneRef = useRef<Zone | null>(null);
   const dirtyRef = useRef(false);
+  const autoAngleRef = useRef(0);
   const draggingRef = useRef(false);
   const lastPtRef = useRef(new THREE.Vector3());
   const hasLastPt = useRef(false);
@@ -273,7 +280,33 @@ export function Terrain() {
   };
 
   // Пересчёт нормалей/прогресса — не чаще раза за кадр
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, dt) => {
+    // A11y: удержание кнопки «Копать/Засыпать» — автокисть по спирали вокруг ямы
+    const stNow = useRitualStore.getState();
+    const zoneNow = zoneRef.current;
+    if (
+      holdAction.digging &&
+      zoneNow &&
+      (stNow.phase === "dig" || stNow.phase === "fill")
+    ) {
+      autoAngleRef.current += dt * 5;
+      const a = autoAngleRef.current;
+      const r = HOLE_R * 0.55 * (0.35 + 0.65 * Math.abs(Math.sin(a * 0.6)));
+      const px = zoneNow.cx + Math.cos(a) * r;
+      const pz = zoneNow.cz + Math.sin(a) * r;
+      digPointer.x = px;
+      digPointer.z = pz;
+      digPointer.active = true;
+      digPointer.pressing = true;
+      applyBrush(px, pz, stNow.phase === "fill" ? 1 : -1, 0.05);
+    }
+    // A11y: накопленные «топы» с кнопки
+    while (holdAction.tampPulses > 0 && zoneNow && stNow.phase === "tamp") {
+      holdAction.tampPulses--;
+      tampAt(zoneNow.cx, zoneNow.cz);
+    }
+    if (holdAction.tampPulses > 0) holdAction.tampPulses = 0;
+
     if (!dirtyRef.current) return;
     dirtyRef.current = false;
     const zone = zoneRef.current;
@@ -343,12 +376,10 @@ export function Terrain() {
     }
   });
 
-  /** Утаптывание: тап по холмику прижимает его и даёт отдачу */
-  const onTampClick = (e: ThreeEvent<MouseEvent>) => {
+  /** Один «топ» по холмику: прижим + отдача (общее для тапа и a11y-кнопки) */
+  const tampAt = (px: number, pz: number) => {
     const zone = zoneRef.current;
     if (!zone) return;
-    const d = Math.hypot(e.point.x - zone.cx, e.point.z - zone.cz);
-    if (d > HOLE_R * 1.3) return; // мимо холмика
     const pos = geometry.attributes.position as THREE.BufferAttribute;
     zone.indices.forEach((vi, k) => {
       const dSpot = zone.distFromSpot[k] ?? Infinity;
@@ -357,17 +388,20 @@ export function Terrain() {
       if (y > 0.015) pos.setY(vi, y * 0.85);
     });
     dirtyRef.current = true;
-    fxBus.spawn({
-      x: e.point.x,
-      y: 0.18,
-      z: e.point.z,
-      count: 6,
-      kind: "dust",
-    });
+    fxBus.spawn({ x: px, y: 0.18, z: pz, count: 6, kind: "dust" });
     cameraShake.intensity = 0.55;
     tampThump();
     haptic("tamp");
     useRitualStore.getState().tamp();
+  };
+
+  /** Утаптывание: тап по холмику */
+  const onTampClick = (e: ThreeEvent<MouseEvent>) => {
+    const zone = zoneRef.current;
+    if (!zone) return;
+    const d = Math.hypot(e.point.x - zone.cx, e.point.z - zone.cz);
+    if (d > HOLE_R * 1.3) return; // мимо холмика
+    tampAt(e.point.x, e.point.z);
   };
 
   // ── Обработчики фазы chooseSpot ──
