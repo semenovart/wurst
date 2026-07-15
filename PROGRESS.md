@@ -1,6 +1,6 @@
 # PROGRESS — журнал реализации «Сосиска-диггер»
 
-> **Текущий стейдж: S5 · Следующий шаг: S5.1 Ceremony timeline (облака, золото, фог)**
+> **Текущий стейдж: S6 · Следующий шаг: S6.1 redis.ts (Upstash | memory) + keys.ts**
 >
 > Правила: после каждого шага — отметка здесь + коммит `S<стейдж>.<шаг>: <что сделано>`.
 > Новая сессия: прочитай этот файл и [PLAN.md](PLAN.md), продолжай со «Следующего шага».
@@ -14,8 +14,8 @@
 | S2 | Машина ритуала + диалог + место | ✅ |
 | S3 | Копание | ✅ |
 | S4 | Сосиска, засыпка, утаптывание | ✅ |
-| S5 | Церемония + сертификат (клиент) | 🔄 |
-| S6 | Бэкенд + стена + share | ⬜ |
+| S5 | Церемония + сертификат (клиент) | ✅ |
+| S6 | Бэкенд + стена + share | 🔄 |
 | S7 | Звук + вибро | ⬜ |
 | S8 | Полировка + прод | ⬜ |
 
@@ -65,12 +65,12 @@
 - [x] S4.DoD полный ритуал офлайн: hello→ceremony пройден e2e в браузере
 
 ### S5 · Церемония + сертификат (клиент)
-- [ ] S5.1 Ceremony timeline (облака, золото, фог)
-- [ ] S5.2 SunAndRainbow + Sparkles + конфетти
-- [ ] S5.3 certificate/spec.ts (дизайн, тексты)
-- [ ] S5.4 drawCertificate.ts (Canvas 2D ×2, fonts.ready)
-- [ ] S5.5 CertificateModal (скачать/share/long-press)
-- [ ] S5.DoD финал + PNG с кириллицей и печатью
+- [x] S5.1 Ceremony timeline (ceremonyMix-шина: облака, золото, фог, тёплый свет)
+- [x] S5.2 SunAndRainbow + Sparkles + конфетти-залпы + титры (CeremonyCaptions)
+- [x] S5.3 certificate/spec.ts (дизайн, тексты, certTexts)
+- [x] S5.4 drawCertificate.ts (Canvas 2D ×2, ensureCertFonts)
+- [x] S5.5 CertificateModal (скачать: share files → a[download]; long-press хинт)
+- [x] S5.DoD финал в браузере (золотое небо+радуга на скриншоте), сертификат проверен пиксельно (2400×1260, титул чернилами, 493КБ PNG)
 
 ### S6 · Бэкенд + стена + share
 - [ ] S6.1 redis.ts (Upstash | memory) + keys.ts
@@ -102,6 +102,8 @@
 - [ ] S8.DoD прод-ссылка с личной OG-карточкой
 
 ## Журнал (append-only)
+
+- 2026-07-15 · S5 завершён. ceremonyMix — модульная шина (0..1): каждый сценный компонент сам лерпит своё состояние в useFrame, дирижёр Ceremony только пишет значение и стреляет конфетти; certificate остаётся в золоте, выход из фаз затухает. Линтер: set-state-in-effect лечится либо key-remount (CeremonyCaptions монтируется только в ceremony), либо derived-state (CertificatePanel c initialOpen). Сертификат: печать по кругу через per-char rotate, имя Caveat'ом. «Поделиться» и номер сосиски ждут S6.
 
 - 2026-07-15 · S4 завершён; e2e до ceremony. КРИТИЧЕСКИЙ УРОК: не вызывать setPointerCapture на таргете ThreeEvent — R3F регистрирует внутренний capture и на анмаунте зовёт releasePointerCapture по несуществующему указателю → NotFoundError валит весь Canvas в ErrorBoundary (реальный риск: pointercancel). Drag без capture: следим за state.raycaster в useFrame, отпускание — window pointerup/pointercancel, решение о снапе — по последней точке указателя (dragXZ), а не по отстающей за лерпом сосиске. Тест-среда: R3F move-путь делит offsetX на ФИЗИЧЕСКИЕ пиксели (2560×1600), click-путь — на CSS (1280×800): синтетика для move ×2, для click ×1; rAF в фоновом табе панели засыпает — «качать» кадры скриншотами или tabs_select. Терраформинг: capture только при e.nativeEvent.isTrusted.
 
