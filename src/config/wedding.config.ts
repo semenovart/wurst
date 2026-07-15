@@ -12,7 +12,7 @@ export const wedding = {
   coupleGenitive: "Саши и Влада",
   /** Дата и время начала свадьбы (с таймзоной города) */
   dateISO: "2026-07-17T16:00:00+03:00",
-  city: "Санкт-Петербург",
+  city: "Москва",
   /** Scope ключей в Redis; в v1 не менять */
   slug: "default",
 } as const;
