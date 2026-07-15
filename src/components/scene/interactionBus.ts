@@ -23,6 +23,9 @@ export const digPointer = {
   lastBiteAt: -10,
 };
 
+/** Тряска камеры: пишется событиями (утаптывание, шлепок), гасится CameraRig */
+export const cameraShake = { intensity: 0 };
+
 export type BurstKind = "dirt" | "dust" | "confetti";
 
 export type Burst = {

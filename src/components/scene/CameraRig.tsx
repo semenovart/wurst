@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Phase } from "@/store/phases";
+import { cameraShake } from "./interactionBus";
 
 type Pose = { pos: THREE.Vector3; look: THREE.Vector3; fov: number };
 
@@ -54,12 +55,9 @@ function poseFor(
 export function CameraRig({
   phase,
   spot = null,
-  shakeRef,
 }: {
   phase: Phase;
   spot?: THREE.Vector3 | null;
-  /** Амплитуда тряски 0..1; пишется извне (утаптывание), гасится сама */
-  shakeRef?: React.MutableRefObject<number>;
 }) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
@@ -81,12 +79,12 @@ export function CameraRig({
     lookTarget.current.lerp(p.look, k);
 
     // Тряска (утаптывание/шлепок): затухающий шум поверх позы
-    if (shakeRef && shakeRef.current > 0.001) {
-      const a = shakeRef.current;
+    if (cameraShake.intensity > 0.001) {
+      const a = cameraShake.intensity;
       const t = clock.elapsedTime * 30;
       camera.position.x += Math.sin(t * 1.3) * 0.05 * a;
       camera.position.y += Math.sin(t * 1.7 + 1) * 0.04 * a;
-      shakeRef.current = Math.max(0, a - dt * 2.5);
+      cameraShake.intensity = Math.max(0, a - dt * 2.5);
     }
 
     camera.lookAt(lookTarget.current);

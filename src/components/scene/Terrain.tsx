@@ -3,7 +3,7 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { MAT, PALETTE } from "./materials";
 import { useRitualStore } from "@/store/ritualStore";
-import { hoverSpot, digPointer, fxBus } from "./interactionBus";
+import { hoverSpot, digPointer, fxBus, cameraShake } from "./interactionBus";
 import { isValidSpot, HOLE_R } from "./constants";
 
 export const TERRAIN_SIZE = 14;
@@ -96,6 +96,10 @@ export function Terrain() {
   const hasLastPt = useRef(false);
   const lastBurstAt = useRef(0);
   const dugSinceBurst = useRef(0);
+  /** База для прогресса засыпки: высоты на входе в fill и сколько поднять */
+  const fillBaseRef = useRef<{ startY: Float32Array; deltaSum: number } | null>(
+    null,
+  );
 
   // Предвычисление зоны при фиксации места
   useEffect(() => {
@@ -140,6 +144,34 @@ export function Terrain() {
       cz,
     };
   }, [spot, geometry]);
+
+  // Вход в fill: снимок высот ямы → знаменатель прогресса засыпки
+  useEffect(
+    () =>
+      useRitualStore.subscribe(
+        (s) => s.phase,
+        (ph) => {
+          if (ph !== "fill") return;
+          const zone = zoneRef.current;
+          if (!zone) return;
+          const pos = geometry.attributes.position as THREE.BufferAttribute;
+          const startY = new Float32Array(zone.indices.length);
+          let deltaSum = 0;
+          zone.indices.forEach((vi, k) => {
+            const y = pos.getY(vi);
+            startY[k] = y;
+            const d = zone.distFromSpot[k] ?? Infinity;
+            if (d < HOLE_R) {
+              const target =
+                MOUND_H * Math.cos(((d / HOLE_R) * Math.PI) / 2) ** 2;
+              deltaSum += Math.max(0, target - y);
+            }
+          });
+          fillBaseRef.current = { startY, deltaSum };
+        },
+      ),
+    [geometry],
+  );
 
   /** Смешивание цвета вершины: трава → земля по фактической глубине */
   const mixDirtColor = (zone: Zone, k: number, vi: number, y: number) => {
@@ -259,6 +291,18 @@ export function Terrain() {
         // Квантуем, чтобы не дёргать React каждый кадр
         const q = Math.round(norm * 20) / 20;
         st.setDigProgress(q);
+      } else if (st.phase === "fill") {
+        const base = fillBaseRef.current;
+        if (base && base.deltaSum > 0) {
+          let raised = 0;
+          zone.indices.forEach((vi, k) => {
+            const d = zone.distFromSpot[k] ?? Infinity;
+            if (d >= HOLE_R) return;
+            raised += Math.max(0, pos.getY(vi) - (base.startY[k] ?? 0));
+          });
+          const norm = Math.min(1, raised / base.deltaSum / 0.85);
+          st.setFillProgress(Math.round(norm * 20) / 20);
+        }
       }
     }
 
@@ -281,6 +325,31 @@ export function Terrain() {
     }
   });
 
+  /** Утаптывание: тап по холмику прижимает его и даёт отдачу */
+  const onTampClick = (e: ThreeEvent<MouseEvent>) => {
+    const zone = zoneRef.current;
+    if (!zone) return;
+    const d = Math.hypot(e.point.x - zone.cx, e.point.z - zone.cz);
+    if (d > HOLE_R * 1.3) return; // мимо холмика
+    const pos = geometry.attributes.position as THREE.BufferAttribute;
+    zone.indices.forEach((vi, k) => {
+      const dSpot = zone.distFromSpot[k] ?? Infinity;
+      if (dSpot >= HOLE_R * 1.2) return;
+      const y = pos.getY(vi);
+      if (y > 0.015) pos.setY(vi, y * 0.85);
+    });
+    dirtyRef.current = true;
+    fxBus.spawn({
+      x: e.point.x,
+      y: 0.18,
+      z: e.point.z,
+      count: 6,
+      kind: "dust",
+    });
+    cameraShake.intensity = 0.55;
+    useRitualStore.getState().tamp();
+  };
+
   // ── Обработчики фазы chooseSpot ──
   const onChooseMove = (e: ThreeEvent<PointerEvent>) => {
     hoverSpot.x = e.point.x;
@@ -298,12 +367,15 @@ export function Terrain() {
   const digDir: -1 | 1 = phase === "fill" ? 1 : -1;
 
   const onDigDown = (e: ThreeEvent<PointerEvent>) => {
-    // capture может бросить InvalidPointerId (синтетические события, edge-кейсы) —
-    // копание от этого зависеть не должно
-    try {
-      (e.target as Element).setPointerCapture(e.pointerId);
-    } catch {
-      /* без capture тоже работаем */
+    // capture только для доверенных событий: на синтетических/умерших
+    // указателях внутренняя регистрация R3F при анмаунте кидает
+    // NotFoundError и роняет Canvas
+    if (e.nativeEvent?.isTrusted) {
+      try {
+        (e.target as Element).setPointerCapture(e.pointerId);
+      } catch {
+        /* без capture тоже работаем */
+      }
     }
     draggingRef.current = true;
     digPointer.pressing = true;
@@ -335,6 +407,7 @@ export function Terrain() {
 
   const choosing = phase === "chooseSpot";
   const earthwork = phase === "dig" || phase === "fill";
+  const tamping = phase === "tamp";
 
   return (
     <>
@@ -345,7 +418,7 @@ export function Terrain() {
         onPointerMove={
           choosing ? onChooseMove : earthwork ? onDigMove : undefined
         }
-        onClick={choosing ? onChooseClick : undefined}
+        onClick={choosing ? onChooseClick : tamping ? onTampClick : undefined}
         onPointerDown={earthwork ? onDigDown : undefined}
         onPointerUp={earthwork ? endDig : undefined}
         onPointerLeave={

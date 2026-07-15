@@ -1,6 +1,6 @@
 "use client";
 
-import { useRitualStore } from "@/store/ritualStore";
+import { useRitualStore, TAMP_GOAL } from "@/store/ritualStore";
 import { STR } from "@/lib/strings.ru";
 import type { Phase } from "@/store/phases";
 
@@ -16,10 +16,13 @@ const HINTS: Partial<Record<Phase, string>> = {
 export function PhaseHint() {
   const phase = useRitualStore((s) => s.phase);
   const candidate = useRitualStore((s) => s.candidateSpot);
+  const tampCount = useRitualStore((s) => s.tampCount);
 
   // Пока открыт конфирм места — подсказку прячем, чтобы не спорили
-  const text =
-    phase === "chooseSpot" && candidate ? undefined : HINTS[phase];
+  let text = phase === "chooseSpot" && candidate ? undefined : HINTS[phase];
+  if (phase === "tamp" && tampCount > 0) {
+    text = STR.hints.tampProgress(Math.max(0, TAMP_GOAL - tampCount));
+  }
 
   return (
     <div aria-live="polite" className="flex min-h-10 items-center">
