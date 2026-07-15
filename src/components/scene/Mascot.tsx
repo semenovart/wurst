@@ -2,14 +2,20 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { MAT } from "./materials";
-import { MASCOT_HOME, HOLE_R } from "./constants";
+import { MASCOT_HOME, HOLE_R, PLACE_STANDBY_DIST } from "./constants";
 import { useRitualStore } from "@/store/ritualStore";
 import { fxBus, cameraShake } from "./interactionBus";
 import { MAX_DEPTH } from "./Terrain";
 import { pick, sausageSplat } from "@/lib/audio/sfx";
 import { haptic } from "@/lib/haptics";
 
-type MascotMode = "idle" | "dragged" | "returning" | "falling" | "buried";
+type MascotMode =
+  | "idle"
+  | "walking"
+  | "dragged"
+  | "returning"
+  | "falling"
+  | "buried";
 
 /** Центр сосиски, когда она лежит на дне ямы (радиус 0.45) */
 const REST_Y = -MAX_DEPTH + 0.42;
@@ -37,14 +43,33 @@ export function Mascot() {
   const squashT = useRef(1); // 1 = отработал
   /** Последняя точка указателя на плоскости земли (намерение пользователя) */
   const dragXZ = useRef<[number, number] | null>(null);
+  /** Точка ожидания у края ямы в фазе place */
+  const standbyRef = useRef<[number, number] | null>(null);
   const dragPlane = useMemo(
     () => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
     [],
   );
 
-  // Сброс режима при смене фазы (place начинается всегда с idle-дома)
+  // Смена фазы: в place сосиска сама подбегает к краю ямы —
+  // всегда в кадре (камера смотрит на яму) и драг короткий
   useEffect(() => {
-    if (phase === "place") mode.current = "idle";
+    if (phase === "place") {
+      const spot = useRitualStore.getState().spot;
+      if (spot) {
+        let dx = MASCOT_HOME[0] - spot[0];
+        let dz = MASCOT_HOME[2] - spot[1];
+        const len = Math.hypot(dx, dz) || 1;
+        dx /= len;
+        dz /= len;
+        standbyRef.current = [
+          spot[0] + dx * PLACE_STANDBY_DIST,
+          spot[1] + dz * PLACE_STANDBY_DIST,
+        ];
+      } else {
+        standbyRef.current = null;
+      }
+      mode.current = "walking";
+    }
     if (phase === "fill" || phase === "tamp" || phase === "ceremony") {
       mode.current = "buried";
     }
@@ -84,7 +109,8 @@ export function Mascot() {
         return;
       }
     }
-    mode.current = "returning";
+    // Промахнулись — сосиска возвращается ждать к краю ямы
+    mode.current = "walking";
   };
 
   // Отпускание где угодно на странице заканчивает перетаскивание
@@ -172,6 +198,28 @@ export function Mascot() {
         const sink = THREE.MathUtils.lerp(REST_Y, SUNK_Y, st.fillProgress);
         g.position.y += (sink - g.position.y) * k;
         body.rotation.z = Math.PI / 2;
+        break;
+      }
+
+      case "walking": {
+        // Вприпрыжку к точке ожидания у ямы (или домой, если ямы нет)
+        const target = standbyRef.current ?? [MASCOT_HOME[0], MASCOT_HOME[2]];
+        const wk = 1 - Math.exp(-3.2 * dt);
+        g.position.x += (target[0] - g.position.x) * wk;
+        g.position.z += (target[1] - g.position.z) * wk;
+        const dist = Math.hypot(
+          g.position.x - target[0],
+          g.position.z - target[1],
+        );
+        if (dist > 0.06) {
+          // прыжочки: небольшие подскоки + покачивание в такт
+          g.position.y = Math.abs(Math.sin(t * 9)) * 0.16;
+          body.rotation.z = Math.sin(t * 9) * 0.09;
+        } else {
+          g.position.y += (0 - g.position.y) * k;
+          body.rotation.z *= 1 - k;
+          if (g.position.y < 0.01) mode.current = "idle";
+        }
         break;
       }
 

@@ -12,6 +12,9 @@ export const MASCOT_CLEAR_R = 1.4;
 /** Радиус самой ямы */
 export const HOLE_R = 0.85;
 
+/** В фазе place сосиска сама подходит и ждёт на этом расстоянии от ямы */
+export const PLACE_STANDBY_DIST = 1.35;
+
 export function isValidSpot(x: number, z: number): boolean {
   if (Math.hypot(x, z) > SPOT_ZONE_R) return false;
   const [mx, , mz] = MASCOT_HOME;
