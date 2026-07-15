@@ -1,6 +1,6 @@
 # PROGRESS — журнал реализации «Сосиска-диггер»
 
-> **Текущий стейдж: S0 · Следующий шаг: S0.2 скаффолд Next.js + зависимости**
+> **Текущий стейдж: S1 · Следующий шаг: S1.1 materials.ts (toon-градиент, палитра)**
 >
 > Правила: после каждого шага — отметка здесь + коммит `S<стейдж>.<шаг>: <что сделано>`.
 > Новая сессия: прочитай этот файл и [PLAN.md](PLAN.md), продолжай со «Следующего шага».
@@ -9,8 +9,8 @@
 
 | Стейдж | Название | Статус |
 |---|---|---|
-| S0 | Каркас | 🔄 |
-| S1 | Статичная 3D-сцена | ⬜ |
+| S0 | Каркас | ✅ |
+| S1 | Статичная 3D-сцена | 🔄 |
 | S2 | Машина ритуала + диалог + место | ⬜ |
 | S3 | Копание | ⬜ |
 | S4 | Сосиска, засыпка, утаптывание | ⬜ |
@@ -23,13 +23,13 @@
 
 ### S0 · Каркас
 - [x] S0.1 git init (main) + PLAN.md + PROGRESS.md
-- [ ] S0.2 скаффолд Next.js (пинованные версии из PLAN.md) + npm install
-- [ ] S0.3 strict tsconfig (+noUncheckedIndexedAccess), eslint flat, vitest
-- [ ] S0.4 wedding.config.ts + strings.ru.ts
-- [ ] S0.5 шрифты: fontsource (woff2 браузеру) + TTF в src/assets/fonts для satori
-- [ ] S0.6 layout (metadata, viewport cover) + globals.css (тема, safe-area, dvh)
-- [ ] S0.7 серверный splash + CountdownBadge
-- [ ] S0.DoD dev-сервер: сплэш с именами и отсчётом; build зелёный
+- [x] S0.2 скаффолд Next.js (пинованные версии из PLAN.md) + npm install
+- [x] S0.3 strict tsconfig (+noUncheckedIndexedAccess), eslint flat, vitest
+- [x] S0.4 wedding.config.ts + strings.ru.ts
+- [x] S0.5 шрифты: fontsource (woff2 браузеру) + TTF в src/assets/fonts для satori
+- [x] S0.6 layout (metadata, viewport cover) + globals.css (тема, safe-area, dvh)
+- [x] S0.7 серверный splash + CountdownBadge
+- [x] S0.DoD dev-сервер: сплэш с именами и отсчётом; build зелёный
 
 ### S1 · Статичная 3D-сцена
 - [ ] S1.1 materials.ts (toon-градиент, палитра)
@@ -104,3 +104,4 @@
 ## Журнал (append-only)
 
 - 2026-07-15 · S0.1 готов: git init на main, PLAN.md (копия утверждённого плана), PROGRESS.md создан. Дальше S0.2.
+- 2026-07-15 · S0 завершён: Next 16.2.10 + react 19.2.7 (~пин) + fiber 9.6.1/drei 10.7.7/three 0.185.1 — всё по плану. Шрифты: fontsource (главные css с unicode-range! сабсетные css без range — их не использовать), TTF для satori скачаны с fonts.gstatic.com (полные, с кириллицей). Нюанс: имена пары нужны в двух падежах — добавлено coupleGenitive в конфиг. Build зелёный, сплэш проверен на десктопе и mobile 375px. Дальше S1.1.
