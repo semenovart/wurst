@@ -54,7 +54,13 @@ export function Ceremony() {
       return;
     }
 
-    // Любая другая фаза — плавно возвращаем день и сбрасываем таймер
+    if (phase === "returned") {
+      // Вклад гостя уже работает: тучи разогнаны, мир встречает солнцем
+      ceremonyMix.v = Math.min(1, ceremonyMix.v + dt * 1.2);
+      return;
+    }
+
+    // Любая другая фаза — плавно возвращаем пасмурный день и сбрасываем таймер
     t0.current = null;
     burstsDone.current = 0;
     if (ceremonyMix.v > 0) {

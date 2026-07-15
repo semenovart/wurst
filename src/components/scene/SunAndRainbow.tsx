@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import { ceremonyMix } from "./interactionBus";
+import { useRitualStore } from "@/store/ritualStore";
 import { PALETTE } from "./materials";
 
 const RAINBOW = [
@@ -23,6 +24,8 @@ export function SunAndRainbow() {
   const groupRef = useRef<THREE.Group>(null);
   const sunRef = useRef<THREE.Group>(null);
   const raysRef = useRef<THREE.Group>(null);
+  const rainbowRef = useRef<THREE.Group>(null);
+  const sparklesRef = useRef<THREE.Group>(null);
 
   const arcMats = useMemo(
     () =>
@@ -62,6 +65,11 @@ export function SunAndRainbow() {
     if (raysRef.current) {
       raysRef.current.rotation.z = clock.elapsedTime * 0.15;
     }
+    // Радуга и искры — атрибуты церемонии; вернувшийся гость видит
+    // просто ясный день с солнцем
+    const festive = useRitualStore.getState().phase !== "returned";
+    if (rainbowRef.current) rainbowRef.current.visible = festive;
+    if (sparklesRef.current) sparklesRef.current.visible = festive;
     arcMats.forEach((mat, i) => {
       mat.opacity = THREE.MathUtils.clamp(m * 1.8 - i * 0.12, 0, 0.85);
     });
@@ -94,7 +102,7 @@ export function SunAndRainbow() {
       </group>
 
       {/* радуга над сценой */}
-      <group position={[-1.5, 0, -7]}>
+      <group ref={rainbowRef} position={[-1.5, 0, -7]}>
         {arcMats.map((mat, i) => (
           <mesh key={i} material={mat} rotation={[0, 0, 0]}>
             <torusGeometry args={[3.4 + i * 0.16, 0.075, 8, 48, Math.PI]} />
@@ -103,14 +111,16 @@ export function SunAndRainbow() {
       </group>
 
       {/* волшебные искорки над лужайкой */}
-      <Sparkles
-        count={50}
-        scale={[9, 4, 9]}
-        position={[0, 2.2, -1]}
-        size={4}
-        speed={0.35}
-        color={PALETTE.cream}
-      />
+      <group ref={sparklesRef}>
+        <Sparkles
+          count={50}
+          scale={[9, 4, 9]}
+          position={[0, 2.2, -1]}
+          size={4}
+          speed={0.35}
+          color={PALETTE.cream}
+        />
+      </group>
     </group>
   );
 }

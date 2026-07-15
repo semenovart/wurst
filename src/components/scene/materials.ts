@@ -5,7 +5,11 @@ import * as THREE from "three";
  */
 export const PALETTE = {
   sky: "#7ec8f5",
+  /** Пасмурное небо до ритуала: тучи грозят свадьбе */
+  skyGloomy: "#8ea6b8",
   skyGolden: "#ffd98a",
+  /** Хмурая туча и её просветлённая версия (уходя, ловит солнце) */
+  cloudGloomy: "#939fab",
   grassA: "#6cc551",
   grassB: "#58b944",
   grassFar: "#54ad42",
@@ -54,7 +58,7 @@ export const MAT = {
   blush: new THREE.MeshBasicMaterial({ color: PALETTE.blush }),
   ink: new THREE.MeshBasicMaterial({ color: PALETTE.ink }),
   eyeWhite: new THREE.MeshBasicMaterial({ color: "#ffffff" }),
-  cloud: toon(PALETTE.cloud, { transparent: true }),
+  cloud: toon(PALETTE.cloudGloomy, { transparent: true }),
   trunk: toon(PALETTE.trunk),
   leafA: toon(PALETTE.leafA),
   leafB: toon(PALETTE.leafB),

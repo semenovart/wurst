@@ -9,8 +9,9 @@ import { ceremonyMix } from "./interactionBus";
  */
 export function SkyDome() {
   const scene = useThree((s) => s.scene);
-  const bg = useMemo(() => new THREE.Color(PALETTE.sky), []);
-  const day = useMemo(() => new THREE.Color(PALETTE.sky), []);
+  const bg = useMemo(() => new THREE.Color(PALETTE.skyGloomy), []);
+  // День начинается пасмурным — ритуал буквально разгоняет тучи
+  const day = useMemo(() => new THREE.Color(PALETTE.skyGloomy), []);
   const golden = useMemo(() => new THREE.Color(PALETTE.skyGolden), []);
 
   useEffect(() => {

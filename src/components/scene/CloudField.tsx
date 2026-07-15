@@ -1,8 +1,11 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { MAT } from "./materials";
+import { MAT, PALETTE } from "./materials";
 import { ceremonyMix } from "./interactionBus";
+
+const CLOUD_GLOOMY = new THREE.Color(PALETTE.cloudGloomy);
+const CLOUD_LIT = new THREE.Color(PALETTE.cloud);
 
 type CloudSpec = {
   y: number;
@@ -76,6 +79,32 @@ const CLOUD_SPECS: CloudSpec[] = [
       [-0.8, 0.2, 0.1, 0.55],
     ],
   },
+  // низкие тяжёлые тучи — сгущают пасмурность до ритуала
+  {
+    y: 4.6,
+    z: -5,
+    x0: -5,
+    speed: 0.12,
+    scale: 1.35,
+    puffs: [
+      [0, 0, 0, 0.85],
+      [0.95, -0.05, 0.1, 0.7],
+      [-0.95, 0.05, -0.1, 0.65],
+      [0.3, 0.35, 0, 0.55],
+    ],
+  },
+  {
+    y: 5.0,
+    z: -8,
+    x0: 6,
+    speed: 0.16,
+    scale: 1.5,
+    puffs: [
+      [0, 0, 0, 0.8],
+      [0.85, 0.1, 0, 0.62],
+      [-0.9, -0.02, 0, 0.6],
+    ],
+  },
 ];
 
 const WRAP_X = 17;
@@ -92,6 +121,8 @@ export function CloudField() {
     const clampedDt = Math.min(dt, 0.05);
     const m = ceremonyMix.v;
     MAT.cloud.opacity = 1 - m;
+    // уходя, тучи ловят солнце и светлеют
+    MAT.cloud.color.lerpColors(CLOUD_GLOOMY, CLOUD_LIT, m);
     specs.forEach((spec, i) => {
       const g = groupRefs.current[i];
       if (!g) return;

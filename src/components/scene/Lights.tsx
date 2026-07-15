@@ -3,14 +3,16 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { ceremonyMix } from "./interactionBus";
 
-const DIR_DAY = new THREE.Color("#ffffff");
+// Пасмурное утро службы → золотой свет после ритуала
+const DIR_GLOOM = new THREE.Color("#dbe3ea");
 const DIR_GOLD = new THREE.Color("#ffd9a0");
-const HEMI_SKY_DAY = new THREE.Color("#cfe9ff");
+const HEMI_SKY_GLOOM = new THREE.Color("#a9bccb");
 const HEMI_SKY_GOLD = new THREE.Color("#ffe4b8");
 
 /**
  * Освещение: hemisphere (небо/трава) + один направленный с тенью.
- * В церемонии свет теплеет вслед за ceremonyMix.
+ * До ритуала — тусклый холодный свет из-под туч; ceremonyMix
+ * выкатывает тёплое яркое солнце.
  */
 export function Lights() {
   const dirRef = useRef<THREE.DirectionalLight>(null);
@@ -21,22 +23,23 @@ export function Lights() {
     const m = ceremonyMix.v;
     const dir = dirRef.current;
     if (dir) {
-      dir.color.copy(tmp.copy(DIR_DAY).lerp(DIR_GOLD, m));
-      dir.intensity = THREE.MathUtils.lerp(2.4, 2.0, m);
+      dir.color.copy(tmp.copy(DIR_GLOOM).lerp(DIR_GOLD, m));
+      dir.intensity = THREE.MathUtils.lerp(1.55, 2.35, m);
     }
     const hemi = hemiRef.current;
     if (hemi) {
-      hemi.color.copy(tmp.copy(HEMI_SKY_DAY).lerp(HEMI_SKY_GOLD, m));
+      hemi.color.copy(tmp.copy(HEMI_SKY_GLOOM).lerp(HEMI_SKY_GOLD, m));
+      hemi.intensity = THREE.MathUtils.lerp(0.95, 1.25, m);
     }
   });
 
   return (
     <>
-      <hemisphereLight ref={hemiRef} args={["#cfe9ff", "#8bc46a", 1.1]} />
+      <hemisphereLight ref={hemiRef} args={["#a9bccb", "#8bc46a", 0.95]} />
       <directionalLight
         ref={dirRef}
         position={[8, 10, 8]}
-        intensity={2.4}
+        intensity={1.55}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-camera-left={-8}
