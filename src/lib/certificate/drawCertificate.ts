@@ -29,26 +29,53 @@ function wrapText(
   return lines;
 }
 
-/** Текст по дуге окружности (для печати) */
-function circularText(
+/**
+ * Текст по дуге печати. Шаг букв — по их реальной ширине (равномерная
+ * плотность), верхняя дуга — головами наружу, нижняя — головами к центру,
+ * чтобы читалась слева направо, а не вверх ногами.
+ */
+function arcText(
   ctx: CanvasRenderingContext2D,
   text: string,
   cx: number,
   cy: number,
   radius: number,
-  startAngle: number,
+  side: "top" | "bottom",
+  gapPx: number,
 ) {
-  const step = (Math.PI * 2) / text.length;
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(startAngle);
-  for (const ch of text) {
+  const chars = [...text];
+  const widths = chars.map((c) => ctx.measureText(c).width);
+  const total =
+    widths.reduce((a, b) => a + b, 0) + gapPx * (chars.length - 1);
+  let a = -(total / radius) / 2;
+  chars.forEach((ch, i) => {
+    const w = widths[i] ?? 0;
+    const mid = a + w / 2 / radius;
     ctx.save();
-    ctx.translate(0, -radius);
+    if (side === "top") {
+      ctx.translate(cx + radius * Math.sin(mid), cy - radius * Math.cos(mid));
+      ctx.rotate(mid);
+    } else {
+      ctx.translate(cx + radius * Math.sin(mid), cy + radius * Math.cos(mid));
+      ctx.rotate(-mid);
+    }
     ctx.fillText(ch, 0, 0);
     ctx.restore();
-    ctx.rotate(step);
-  }
+    a += (w + gapPx) / radius;
+  });
+}
+
+/** Ромбик-разделитель печати */
+function stampDiamond(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  s: number,
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillRect(-s / 2, -s / 2, s, s);
   ctx.restore();
 }
 
@@ -218,30 +245,38 @@ export function drawCertificate(canvas: HTMLCanvasElement, data: CertData) {
   ctx.fillText(t.brand, CERT_W / 2, 582);
   ctx.globalAlpha = 1;
 
-  // печать
+  // печать: двойной внешний борт, дуги текста, ромбики по бокам
   const sx = CERT_W - 190;
   const sy = 470;
   ctx.save();
   ctx.translate(sx, sy);
   ctx.rotate(-0.21);
   ctx.translate(-sx, -sy);
-  ctx.globalAlpha = 0.85;
+  ctx.globalAlpha = 0.88;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.strokeStyle = C.stamp;
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.arc(sx, sy, 84, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.arc(sx, sy, 62, 0, Math.PI * 2);
+  ctx.arc(sx, sy, 77, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(sx, sy, 52, 0, Math.PI * 2);
   ctx.stroke();
   ctx.fillStyle = C.stamp;
-  ctx.font = "700 16px Rubik";
-  circularText(ctx, t.stamp, sx, sy, 73, -Math.PI / 2);
-  ctx.font = "700 20px Rubik";
-  ctx.textAlign = "center";
-  ctx.fillText("МЕТЕО", sx, sy - 12);
-  ctx.fillText("РИТУАЛ", sx, sy + 12);
+  ctx.font = "700 15px Rubik";
+  arcText(ctx, t.stampTop, sx, sy, 64, "top", 3);
+  ctx.font = "700 13px Rubik";
+  arcText(ctx, t.stampBottom, sx, sy, 64, "bottom", 2);
+  stampDiamond(ctx, sx - 64, sy, 7);
+  stampDiamond(ctx, sx + 64, sy, 7);
+  ctx.font = "700 21px Rubik";
+  ctx.fillText(t.stampCenter[0], sx, sy - 12);
+  ctx.fillText(t.stampCenter[1], sx, sy + 13);
   ctx.restore();
 }
 

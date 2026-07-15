@@ -152,7 +152,7 @@ export function OgCertificate({ data }: { data: CertData }) {
         </div>
       </div>
 
-      {/* печать справа-снизу */}
+      {/* печать справа-снизу: кольца + текст по дугам из повёрнутых букв */}
       <div
         style={{
           position: "absolute",
@@ -161,45 +161,116 @@ export function OgCertificate({ data }: { data: CertData }) {
           width: 168,
           height: 168,
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           transform: "rotate(-12deg)",
-          opacity: 0.85,
+          opacity: 0.88,
+          color: C.stamp,
         }}
       >
+        {/* двойной внешний борт и внутреннее кольцо */}
         <div
           style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
             width: 168,
             height: 168,
-            border: `4px solid ${C.stamp}`,
+            border: `5px solid ${C.stamp}`,
             borderRadius: 9999,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: 7,
+            top: 7,
+            width: 154,
+            height: 154,
+            border: `2px solid ${C.stamp}`,
+            borderRadius: 9999,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: 32,
+            top: 32,
+            width: 104,
+            height: 104,
+            border: `2px solid ${C.stamp}`,
+            borderRadius: 9999,
+          }}
+        />
+        {/* Тексты между кольцами — прямыми строками: повороты отдельных
+            букв satori рендерит непредсказуемо (проверено), а прямые
+            строки в поле между кольцами — классика круглых штампов */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 15,
+            width: 168,
+            display: "flex",
+            justifyContent: "center",
+            fontSize: 14,
+            fontWeight: 700,
+            letterSpacing: 1.5,
+          }}
+        >
+          {t.stampTop}
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            left: -2,
+            bottom: 18,
+            width: 168,
+            display: "flex",
+            justifyContent: "center",
+            fontSize: 9.5,
+            fontWeight: 700,
+          }}
+        >
+          {t.stampBottom}
+        </div>
+        {/* ромбики-разделители по бокам */}
+        <div
+          style={{
+            position: "absolute",
+            left: 84 - 64 - 4.5,
+            top: 84 - 4.5,
+            width: 9,
+            height: 9,
+            backgroundColor: C.stamp,
+            transform: "rotate(45deg)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: 84 + 64 - 4.5,
+            top: 84 - 4.5,
+            width: 9,
+            height: 9,
+            backgroundColor: C.stamp,
+            transform: "rotate(45deg)",
+          }}
+        />
+        {/* центр */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: 168,
+            height: 168,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            color: C.stamp,
           }}
         >
-          <div style={{ fontSize: 15, fontWeight: 700 }}>ОДОБРЕНО</div>
-          <div
-            style={{
-              width: 124,
-              height: 124,
-              border: `2px solid ${C.stamp}`,
-              borderRadius: 9999,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              marginTop: 4,
-            }}
-          >
-            <div style={{ fontSize: 19, fontWeight: 700 }}>МЕТЕО</div>
-            <div style={{ fontSize: 19, fontWeight: 700 }}>РИТУАЛ</div>
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4 }}>
-            ОСАДКИ ОТМЕНЕНЫ
-          </div>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>{t.stampCenter[0]}</div>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>{t.stampCenter[1]}</div>
         </div>
       </div>
 
